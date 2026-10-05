@@ -9,16 +9,16 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="TidyNest">
-  <link rel="preload" href="manrope.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="onest.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <title>TidyNest</title>
   <style>
-    /* TidyNest look: Manrope throughout, logo navy for actions, logo green for links, "today" and confirmations.
+    /* TidyNest look: Onest throughout, logo navy for actions, logo green for links, "today" and confirmations.
        Flat white cards on a cool grey ground; colour is reserved for people, state and the brand. */
-    @font-face{font-family:"Manrope";src:url("manrope.woff2") format("woff2");font-weight:200 800;font-style:normal;font-display:swap}
-    :root{--font:"Manrope",-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI","Helvetica Neue",Arial,sans-serif;
+    @font-face{font-family:"Onest";src:url("onest.woff2") format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
+    :root{--font:"Onest",-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI","Helvetica Neue",Arial,sans-serif;
       --bg:#f2f4f7;--card:#fff;--field:#fff;--fill:#f2f4f7;--fill-2:#e6eaf0;--text:#0f1b2d;--muted:#5d6a7b;--faint:#aab3bf;--line:#e0e5ec;--line-strong:#c9d1dc;--tick-border:#b9c2ce;
       --accent:#0b2545;--on-accent:#fff;--accent-tint:#e7ecf3;--link:#0a7d6b;--focus:#0c9d86;--danger:#c9372c;--ok:#0a7d6b;--warn:#e8730c;
       --nav:rgba(255,255,255,.94);--scrim:rgba(11,24,45,.45);
@@ -41,7 +41,7 @@
     .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 
     /* page frame */
-    .app{max-width:760px;margin:0 auto}
+    .app{max-width:760px;margin:0 auto;overflow-x:hidden;overflow-x:clip}
     header{padding:calc(14px + env(safe-area-inset-top)) 18px 2px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
     .head-text{min-width:0}
     header h1{margin:0;font-size:25px;font-weight:800;letter-spacing:-.6px;line-height:1.15;display:flex;align-items:center;gap:9px}
@@ -95,20 +95,24 @@
     .row-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
     .pill{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 14px;font-size:13px;font-weight:700}
     .pill.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+    .pill{transition:transform .12s ease-out}.pill:active{transform:scale(.92)}
     .pill.chat-btn,.pill.ack-btn{padding:5px 10px}
     .pill.chat-btn{color:var(--accent)}
     .pill.chat-btn svg,.pill.ack-btn svg{width:18px;height:18px}
     .ack-status{width:30px;height:30px;display:grid;place-items:center;color:var(--faint)}
-    .ack-status.ok{color:var(--ok)}.ack-status svg{width:18px;height:18px}
+    .ack-status svg{width:18px;height:18px}.ack-status.ok{color:var(--ok)}.ack-status.ok svg{width:20px;height:20px}
+    .ack-note{display:inline-flex;align-items:center;gap:4px;color:var(--ok);font-weight:700;white-space:nowrap}.ack-note svg{width:13px;height:13px}
     #chatList{max-height:46vh;overflow-y:auto;margin-top:12px}
     .chat-compose{display:flex;gap:8px;margin-top:12px}
     .chat-compose button{border:0;background:var(--accent);color:var(--on-accent);border-radius:14px;padding:0 18px;font-weight:700;flex:0 0 auto}
 
     /* bottom bar */
     .nav{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:7px 8px calc(7px + env(safe-area-inset-bottom));background:var(--nav);border-top:1px solid var(--line);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
-    .nav-inner{max-width:760px;margin:auto;display:grid;grid-template-columns:repeat(5,1fr)}
-    .nav button{border:0;background:none;color:var(--muted);padding:3px 0;font-size:11px;font-weight:600}
-    .nav-icon{display:block;width:52px;height:30px;padding:3px 14px;margin:0 auto 2px;border-radius:999px}
+    .nav-inner{max-width:760px;margin:auto;display:flex;justify-content:space-between}
+    .nav button{border:0;background:none;color:var(--muted);padding:3px 1px;font-size:10px;font-weight:600;letter-spacing:-.1px;white-space:nowrap;flex:1 1 auto;min-width:0}
+    .nav-icon{display:block;position:relative;width:46px;height:30px;padding:3px 11px;margin:0 auto 2px;border-radius:999px}
+    @media (max-width: 350px){.nav button{font-size:8.5px;letter-spacing:-.2px}.nav-icon{width:38px;padding:3px 7px}}
+    .nav-badge{position:absolute;top:-2px;right:2px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--danger);color:#fff;font-size:10px;font-weight:800;font-style:normal;line-height:17px;text-align:center;font-variant-numeric:tabular-nums}
     .nav button.active{color:var(--accent);font-weight:800}
     .nav button.active .nav-icon{background:var(--accent-tint)}
     .view{display:none}.view.active{display:block}
@@ -121,7 +125,7 @@
     .cal-head,.cal-days{display:grid;grid-template-columns:repeat(7,1fr)}
     .cal-head{text-align:center;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px}
     .cal-days{gap:2px}
-    .cal-cell{border:0;background:none;height:46px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0;font-weight:600;font-variant-numeric:tabular-nums}
+    .cal-cell{border:0;background:none;height:46px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0;font-weight:600}
     .cal-cell.other{color:var(--faint)}
     .cal-cell.today .num{color:var(--link);font-weight:800}
     .cal-cell.sel{background:var(--accent-tint);box-shadow:inset 0 0 0 2px var(--accent)}.cal-cell.sel .num{font-weight:800}
@@ -193,12 +197,7 @@
       body{overflow:hidden}
     }
 
-    /* alerts and toasts */
-    .alerts{position:fixed;top:calc(10px + env(safe-area-inset-top));left:10px;right:10px;z-index:60;display:flex;flex-direction:column;gap:8px;max-width:740px;margin:0 auto}
-    .alert{background:var(--toast-bg);color:#fff;border-radius:18px;padding:13px 14px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;gap:12px;align-items:center}
-    .alert-text{flex:1;min-width:0}.alert-text b{display:block;font-weight:800;overflow-wrap:anywhere}.alert-text span{font-size:13px;color:var(--toast-muted)}
-    .alert button{border:0;border-radius:10px;padding:8px 12px;background:var(--toast-btn);color:#fff;font-weight:700;font-size:14px;flex:0 0 auto}
-    .alert button.go{background:#0a7d6b;color:#fff}
+    /* toasts */
     .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(104px + env(safe-area-inset-bottom));z-index:70;background:var(--toast-bg);color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;font-weight:600;max-width:88vw;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s}
     .toast.show{opacity:1}
   </style>
@@ -260,7 +259,6 @@
 </div>
 
 <div id="appScreen" class="hidden">
-  <div id="alerts" class="alerts" aria-live="assertive"></div>
 
   <div class="app">
     <header>
@@ -286,10 +284,6 @@
         <div class="section">
           <div class="section-title"><h2>Coming up</h2></div>
           <div id="upcomingList" class="card list"></div>
-        </div>
-        <div id="activitySection" class="section hidden">
-          <div class="section-title"><h2>Recently added</h2></div>
-          <div id="activityList" class="card list"></div>
         </div>
       </section>
 
@@ -335,6 +329,13 @@
         </div>
       </section>
 
+      <section id="notificationsView" class="view">
+        <div class="section">
+          <div class="section-title"><h2>Recent activity</h2></div>
+          <div id="activityList" class="card list"></div>
+        </div>
+      </section>
+
       <section id="settingsView" class="view">
         <div class="section"><div id="settingsList" class="card"></div></div>
       </section>
@@ -347,6 +348,7 @@
       <button data-action="view" data-view="calendar"><span class="nav-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="M7.5 13.3h9M7.5 16.9h5.5"/></svg></span>Calendar</button>
       <button data-action="view" data-view="reminders"><span class="nav-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 6.5 1.6 1.6L8.4 5"/><path d="M11.5 6.6H20"/><path d="m4 12.5 1.6 1.6 2.8-3.1"/><path d="M11.5 12.6H20"/><rect x="4.2" y="16.8" width="3.6" height="3.6" rx=".8"/><path d="M11.5 18.6H20"/></svg></span>Reminders</button>
       <button data-action="view" data-view="timers"><span class="nav-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V9.8M10 3.2h4M12 3.2v3.3M17.6 7.4l1.3-1.3"/></svg></span>Timers</button>
+      <button data-action="view" data-view="notifications" aria-label="Notifications"><span class="nav-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6a5.6 5.6 0 0 0-5.6 5.6c0 4.6-1.9 6-2.1 7.8h15.4c-.2-1.8-2.1-3.2-2.1-7.8A5.6 5.6 0 0 0 12 3.6z"/><path d="M10 19.8a2.1 2.1 0 0 0 4 0"/></svg><i id="navBadge" class="nav-badge hidden"></i></span>Notifications</button>
       <button data-action="view" data-view="settings"><span class="nav-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.52 5.57L10.75 3.09L13.25 3.09L13.48 5.57A6.6 6.6 0 0 1 15.50 6.40L15.50 6.40L17.42 4.81L19.19 6.58L17.60 8.50A6.6 6.6 0 0 1 18.43 10.52L18.43 10.52L20.91 10.75L20.91 13.25L18.43 13.48A6.6 6.6 0 0 1 17.60 15.50L17.60 15.50L19.19 17.42L17.42 19.19L15.50 17.60A6.6 6.6 0 0 1 13.48 18.43L13.48 18.43L13.25 20.91L10.75 20.91L10.52 18.43A6.6 6.6 0 0 1 8.50 17.60L8.50 17.60L6.58 19.19L4.81 17.42L6.40 15.50A6.6 6.6 0 0 1 5.57 13.48L5.57 13.48L3.09 13.25L3.09 10.75L5.57 10.52A6.6 6.6 0 0 1 6.40 8.50L6.40 8.50L4.81 6.58L6.58 4.81L8.50 6.40A6.6 6.6 0 0 1 10.52 5.57Z"/><circle cx="12" cy="12" r="2.7"/></svg></span>Settings</button>
     </div>
   </nav>
@@ -446,7 +448,7 @@
     onSnapshot, query, where, limit, serverTimestamp, arrayUnion, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-  const VERSION = "0.22";
+  const VERSION = "0.29";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAtOSr0yNRMh26de_1OHx4wl7ylUjlqACo",
@@ -493,7 +495,6 @@
     editingId: null,
     chatId: null,
     syncError: "",
-    alerts: [],
     lastNameSynced: "",
     inviteCode: ""
   };
@@ -552,6 +553,7 @@
   const ICONS = {
     calendar: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="M7.5 13.3h9M7.5 16.9h5.5"/></svg>',
     timer: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V9.8M10 3.2h4M12 3.2v3.3M17.6 7.4l1.3-1.3"/></svg>',
+    check: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.6 4.6 4.6L19 7.6" stroke-width="2.6"/></svg>',
     thumb: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10.5v9.5H4.5a1 1 0 0 1-1-1v-7.5a1 1 0 0 1 1-1z"/><path d="M7 10.5l3.6-6.3a1.9 1.9 0 0 1 3.5 1.3L13.4 9h4.8a2 2 0 0 1 2 2.4L19 18.3a2 2 0 0 1-2 1.7H7"/></svg>',
     chat: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-7.2L7.5 21v-3.5H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M8 9.8h8M8 13h5"/></svg>',
     reminder: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 6.5 1.6 1.6L8.4 5"/><path d="M11.5 6.6H20"/><path d="m4 12.5 1.6 1.6 2.8-3.1"/><path d="M11.5 12.6H20"/><rect x="4.2" y="16.8" width="3.6" height="3.6" rx=".8"/><path d="M11.5 18.6H20"/></svg>'
@@ -841,7 +843,6 @@
     state.priv = [];
     state.items = [];
     state.loaded = { shared: false, priv: false };
-    state.alerts = [];
     state.syncError = "";
     state.lastNameSynced = "";
   }
@@ -1034,7 +1035,6 @@
       doneAt: done ? serverTimestamp() : null,
       updatedAt: serverTimestamp()
     }).catch(writeFailed);
-    dismissAlertsFor(id);
   }
 
   function askDeleteItem() {
@@ -1048,7 +1048,6 @@
       danger: true,
       action: () => {
         deleteDoc(itemRef(id)).catch(writeFailed);
-        dismissAlertsFor(id);
         toast("Deleted");
       }
     });
@@ -1059,7 +1058,45 @@
   function acknowledge(id) {
     const item = findItem(id);
     if (!item) return;
-    updateDoc(itemRef(id), { ackBy: arrayUnion(state.user.uid), updatedAt: serverTimestamp() }).catch(writeFailed);
+    const uid = state.user.uid;
+    // show it as acknowledged straight away; the saved copy follows a moment later
+    if (!Array.isArray(item.ackBy) || !item.ackBy.includes(uid)) item.ackBy = [...(item.ackBy || []), uid];
+    render();
+    updateDoc(itemRef(id), { ackBy: arrayUnion(uid), updatedAt: serverTimestamp() }).catch(writeFailed);
+  }
+
+  // In Notifications, acknowledging sends the card off: it leans back a touch, sweeps away to the right,
+  // and the cards below slide up to close the gap. Elsewhere (and with reduced motion) it just acknowledges.
+  async function acknowledgeFrom(button) {
+    const id = button.dataset.id;
+    const card = button.closest(".item");
+    const inNotifications = !!card && card.parentElement?.id === "activityList";
+    const calm = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (!inNotifications || calm || typeof card.animate !== "function" || state.animating) return acknowledge(id);
+
+    state.animating = true;
+    try {
+      card.style.pointerEvents = "none";
+      card.style.willChange = "transform, opacity";
+      const box = card.getBoundingClientRect();
+      const cs = getComputedStyle(card);
+      const gap = parseFloat(getComputedStyle(card.parentElement).rowGap) || 0;
+      await card.animate([
+        { transform: "translateX(0) rotate(0deg)", opacity: 1, offset: 0, easing: "cubic-bezier(.3,0,.3,1)" },
+        { transform: "translateX(-16px) rotate(-.8deg)", opacity: 1, offset: .24, easing: "cubic-bezier(.55,0,.9,.45)" },
+        { transform: "translateX(70%) rotate(1.6deg)", opacity: .9, offset: .8, easing: "linear" },
+        { transform: "translateX(120%) rotate(2.4deg)", opacity: 0, offset: 1 }
+      ], { duration: 560, fill: "forwards" }).finished;
+      card.style.overflow = "hidden";
+      await card.animate([
+        { height: box.height + "px", paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom, borderTopWidth: cs.borderTopWidth, borderBottomWidth: cs.borderBottomWidth, marginBottom: "0px" },
+        { height: "0px", paddingTop: "0px", paddingBottom: "0px", borderTopWidth: "0px", borderBottomWidth: "0px", marginBottom: -gap + "px" }
+      ], { duration: 300, easing: "cubic-bezier(.2,.9,.25,1)", fill: "forwards" }).finished;
+    } catch (error) {
+      console.warn(error);
+    }
+    state.animating = false;
+    acknowledge(id);
   }
 
   function personName(uid, fallback) {
@@ -1084,24 +1121,31 @@
   }
 
   // Who has acknowledged a shared item. The person who added it sees the others' status; everyone else gets a button.
-  function ackHtml(item) {
+  // Acknowledging a shared item. Returns the control for the right-hand side of the row
+  // and the "Acknowledged by …" note that goes on the details line.
+  // The note only ever names other people: your own acknowledgement shows as a green tick where the button was.
+  function ackParts(item) {
     const h = state.household;
     const uid = state.user.uid;
     const others = (h.members || []).filter(m => m !== item.createdBy);
-    if (!item.shared || !others.length) return "";
+    if (!item.shared || !others.length) return { control: "", note: "" };
     const acked = Array.isArray(item.ackBy) ? item.ackBy : [];
-    const status = (text, ok) => `<span class="ack-status ${ok ? "ok" : ""}" title="${escapeHtml(text)}">${ICONS.thumb}<span class="sr">${escapeHtml(text)}</span></span>`;
-    if (item.createdBy !== uid) {
-      return acked.includes(uid)
-        ? status("Acknowledged", true)
-        : `<button class="pill primary ack-btn" data-action="ack" data-id="${escapeHtml(item.id)}" aria-label="Acknowledge" title="Acknowledge">${ICONS.thumb}</button>`;
-    }
     const name = m => h.memberNames?.[m] || "Member";
+    const doneByOthers = others.filter(m => m !== uid && acked.includes(m));
     const waiting = others.filter(m => !acked.includes(m));
-    // grey thumb: still waiting on them; green thumb: they have acknowledged
-    return waiting.length
-      ? status(`Waiting for ${waiting.map(name).join(" & ")} to acknowledge`, false)
-      : status(`${others.map(name).join(" & ")} acknowledged`, true);
+    const note = doneByOthers.length
+      ? `<span class="ack-note">${ICONS.thumb}Acknowledged by ${escapeHtml(doneByOthers.map(name).join(" & "))}</span>`
+      : "";
+    let control = "";
+    if (item.createdBy !== uid) {
+      control = acked.includes(uid)
+        ? `<span class="ack-status ok" title="You've acknowledged this">${ICONS.check}<span class="sr">You've acknowledged this</span></span>`
+        : `<button class="pill primary ack-btn" data-action="ack" data-id="${escapeHtml(item.id)}" aria-label="Acknowledge" title="Acknowledge">${ICONS.thumb}</button>`;
+    } else if (waiting.length) {
+      const text = `Waiting for ${waiting.map(name).join(" & ")} to acknowledge`;
+      control = `<span class="ack-status" title="${escapeHtml(text)}">${ICONS.thumb}<span class="sr">${escapeHtml(text)}</span></span>`;
+    }
+    return { control, note };
   }
 
   function openChat(id) {
@@ -1205,10 +1249,11 @@
     const lead = item.type === "reminder"
       ? `<button class="tick ${item.done ? "on" : ""}" data-action="toggle" data-id="${id}" aria-label="${item.done ? "Mark as not done" : "Mark as done"}">${item.done ? "✓" : ""}</button>`
       : `<div class="icon ${escapeHtml(item.type)}">${typeIcon(item.type)}</div>`;
-    // title, then one line with the date, any Overdue badge and who it belongs to
+    const ack = onHome ? ackParts(item) : { control: "", note: "" };
+    // title, then one line with the date, any Overdue badge, who it belongs to and who has acknowledged it
     const body = `<button class="item-body" data-action="edit" data-id="${id}">
         <span class="item-title">${escapeHtml(item.title)}</span>
-        <span class="item-meta"><span class="sr">${typeName(item.type)}. </span><span>${escapeHtml(formatDateTime(item.date))}</span>${overdue ? '<span class="badge overdue">Overdue</span>' : ""}<span class="shared">${shareLabel(item)}</span></span>
+        <span class="item-meta"><span class="sr">${typeName(item.type)}. </span><span>${escapeHtml(formatDateTime(item.date))}</span>${overdue ? '<span class="badge overdue">Overdue</span>' : ""}<span class="shared">${shareLabel(item)}</span>${ack.note}</span>
         ${item.notes ? `<span class="item-notes">${escapeHtml(item.notes)}</span>` : ""}
         ${!onHome && last ? `<span class="feed-comment"><b style="color:${colorOf(last.by)}">${escapeHtml(personName(last.by, last.byName))}</b> ${escapeHtml(last.text || "")}${comments.length > 1 ? ` <span class="small">(${comments.length} messages)</span>` : ""}</span>` : ""}
       </button>`;
@@ -1216,7 +1261,7 @@
       return `<div class="item ${item.done ? "done" : ""}" ${whoStyle(item.createdBy)}>${lead}${body}</div>`;
     }
     const canChat = item.shared && (state.household.members || []).length > 1;
-    const actions = ackHtml(item) + (canChat ? `<button class="pill chat-btn" data-action="chat" data-id="${id}" aria-label="${comments.length ? "Reply" : "Chat"}" title="${comments.length ? "Reply" : "Chat"}">${ICONS.chat}</button>` : "");
+    const actions = ack.control + (canChat ? `<button class="pill chat-btn" data-action="chat" data-id="${id}" aria-label="${comments.length ? "Reply" : "Chat"}" title="${comments.length ? "Reply" : "Chat"}">${ICONS.chat}</button>` : "");
     // on Home the acknowledge and chat buttons sit to the right of the text; messages run underneath
     return `<div class="item ${item.done ? "done" : ""}" ${whoStyle(item.createdBy)}>
       ${lead}
@@ -1293,6 +1338,7 @@
 
   function render() {
     if (!state.user || !state.household) return;
+    if (state.animating) return;   // a card is mid-swipe; the acknowledge that follows redraws everything
     state.colors = colorMap();
     const now = new Date();
     const todayKey = dayKey(now);
@@ -1314,8 +1360,9 @@
       .sort(byDate);
     list("upcomingList", upcoming, renderHomeItem, "Nothing in the next 7 days.");
 
-    // Recently added: new shared things, newest first. Each one leaves once it has been acknowledged:
+    // Notifications page: new shared things. Each one leaves once it has been acknowledged:
     // for the person who added it, when everyone else has; for anyone else, when they have themselves.
+    // Things waiting on you come first, and the bell shows how many of those there are.
     const me = state.user.uid;
     const members = state.household.members || [];
     const newest = (a, b) => dateValue(b.createdAt) - dateValue(a.createdAt);
@@ -1324,10 +1371,13 @@
           if (!i.shared || i.done) return false;
           const acked = Array.isArray(i.ackBy) ? i.ackBy : [];
           return i.createdBy === me ? members.some(m => m !== me && !acked.includes(m)) : !acked.includes(me);
-        }).sort(newest)
+        }).sort((a, b) => ((a.createdBy === me) - (b.createdBy === me)) || newest(a, b))
       : [...items].sort(newest).slice(0, 5);   // on your own there is nobody to acknowledge, so just show the latest few
-    $("activitySection").classList.toggle("hidden", !recent.length);
-    list("activityList", recent, renderHomeItem, "");
+    list("activityList", recent, renderHomeItem, "You're all caught up. Anything new that either of you adds waits here until it has been acknowledged.");
+    const waitingOnMe = members.length > 1 ? recent.filter(i => i.createdBy !== me).length : 0;
+    $("navBadge").textContent = waitingOnMe > 9 ? "9+" : String(waitingOnMe);
+    $("navBadge").classList.toggle("hidden", !waitingOnMe);
+    document.querySelector('.nav [data-view="notifications"]').setAttribute("aria-label", waitingOnMe ? `Notifications, ${waitingOnMe} to acknowledge` : "Notifications");
 
     const open = items.filter(i => i.type === "reminder" && !i.done).sort(byDate);
     list("reminderList", open, renderItem, "No reminders waiting.");
@@ -1440,7 +1490,7 @@
       <div class="settings-row"><span>Household</span><span class="val"><span class="small">${escapeHtml(h.name)}</span><button data-action="rename-household">Rename</button></span></div>
       <div class="settings-row"><span>Members</span><span class="val"><span class="small">${members}</span><button data-action="invite">Invite</button></span></div>
       <div class="settings-row"><span>Sync</span><span class="val"><span id="syncStatus" class="status"></span></span></div>
-      <div class="settings-row"><span>Alerts</span><span class="val">${notifHtml}</span></div>
+      <div class="settings-row"><span>Phone alerts</span><span class="val">${notifHtml}</span></div>
       ${standalone ? "" : `<div class="settings-row"><span>Install</span><span class="val"><span class="small">Use your browser's Share or menu button, then “Add to Home Screen”.</span></span></div>`}
       ${legacyCount ? `<div class="settings-row"><span>Old data on this device</span><span class="val"><span class="small">${legacyCount} item${legacyCount === 1 ? "" : "s"}</span><button data-action="import-local">Import</button></span></div>` : ""}
       <div class="settings-row"><span>Tidy-up</span><span class="val"><span class="small">Events are removed a year after they happen. Ticked-off reminders are removed after ${KEEP_DONE_DAYS} days.</span></span></div>
@@ -1472,7 +1522,7 @@
     state.view = name;
     document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === name + "View"));
     document.querySelectorAll(".nav button").forEach(b => b.classList.toggle("active", b.dataset.view === name));
-    $("headerAdd").classList.toggle("hidden", name === "settings");
+    $("headerAdd").classList.toggle("hidden", name === "settings" || name === "notifications");
     $("headerAdd").setAttribute("aria-label", { calendar: "Add an event on the selected day", reminders: "Add a reminder", timers: "Add a timer" }[name] || "Add");
     window.scrollTo(0, 0);
     render();
@@ -1649,30 +1699,14 @@
       try { localStorage.setItem(alertedKey(), JSON.stringify(alerted.slice(-300))); } catch {}
     }
   }
+  // A due item only produces a notification from the phone itself, and only if Alerts is turned on in Settings.
   function raiseAlert(item, key) {
-    const heading = item.type === "reminder" ? "Reminder" : item.type === "timer" ? "Timer finished" : "Starting now";
-    state.alerts.push({ key, id: item.id, type: item.type, heading, title: item.title, when: formatTime(item.date) });
-    renderAlerts();
     if (notificationState() !== "granted") return;
+    const heading = item.type === "reminder" ? "Reminder" : item.type === "timer" ? "Timer finished" : "Starting now";
     const options = { body: `${item.title}, ${formatTime(item.date)}`, tag: key, icon: "icon-192.png" };
     const fallback = () => { try { new Notification(heading, options); } catch (e) { console.warn(e); } };
     if (swRegistration) swRegistration.showNotification(heading, options).catch(fallback);
     else fallback();
-  }
-  function renderAlerts() {
-    $("alerts").innerHTML = state.alerts.map(a => `<div class="alert">
-      <div class="alert-text"><b>${escapeHtml(a.title)}</b><span>${escapeHtml(a.heading)}, ${escapeHtml(a.when)}</span></div>
-      ${a.type === "reminder" ? `<button class="go" data-action="alert-done" data-key="${escapeHtml(a.key)}">Done</button>` : ""}
-      <button data-action="alert-dismiss" data-key="${escapeHtml(a.key)}">Dismiss</button>
-    </div>`).join("");
-  }
-  function dismissAlert(key) {
-    state.alerts = state.alerts.filter(a => a.key !== key);
-    renderAlerts();
-  }
-  function dismissAlertsFor(id) {
-    state.alerts = state.alerts.filter(a => a.id !== id);
-    renderAlerts();
   }
   async function enableAlerts() {
     try {
@@ -1705,7 +1739,7 @@
     "toggle": el => toggleDone(el.dataset.id),
     "save-item": () => saveItem(),
     "delete-item": () => askDeleteItem(),
-    "ack": el => acknowledge(el.dataset.id),
+    "ack": el => acknowledgeFrom(el),
     "chat": el => openChat(el.dataset.id),
     "chat-send": () => sendChat(),
     "clear-done": () => askClearDone(),
@@ -1727,9 +1761,7 @@
     "invite": () => createInvite(),
     "share-invite": () => shareInvite(),
     "import-local": () => askImportLocal(),
-    "enable-alerts": () => enableAlerts(),
-    "alert-done": el => { const a = state.alerts.find(x => x.key === el.dataset.key); if (a) toggleDone(a.id); dismissAlert(el.dataset.key); },
-    "alert-dismiss": el => dismissAlert(el.dataset.key)
+    "enable-alerts": () => enableAlerts()
   };
 
   document.addEventListener("click", event => {
