@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f5f5f7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>HomeSort</title>
+  <style>
+    :root{--bg:#f5f5f7;--card:#fff;--text:#171717;--muted:#777;--line:#e5e5e7;--accent:#1677ff;--danger:#d93025;--nav:rgba(255,255,255,.94)}
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif}
+    body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+    button,input,select{font:inherit} button{cursor:pointer}
+    .app{max-width:760px;margin:0 auto}
+    header{padding:calc(18px + env(safe-area-inset-top)) 18px 10px}
+    header h1{margin:0;font-size:30px;letter-spacing:-.6px} header p{margin:4px 0 0;color:var(--muted)}
+    main{padding:0 14px}.section{margin:16px 0 24px}
+    .section-title{display:flex;align-items:center;justify-content:space-between;margin:0 4px 9px}
+    .section-title h2{margin:0;font-size:18px}
+    .add-btn{border:0;background:var(--accent);color:#fff;width:38px;height:38px;border-radius:19px;font-size:24px;line-height:1}
+    .card{background:var(--card);border-radius:16px;border:1px solid var(--line);box-shadow:0 1px 2px rgba(0,0,0,.03);overflow:hidden}
+    .empty{padding:28px 18px;text-align:center;color:var(--muted)}
+    .item{display:flex;gap:12px;padding:14px 15px;border-bottom:1px solid var(--line)}
+    .item:last-child{border-bottom:0}.icon{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:#eef3ff;flex:0 0 auto}
+    .item-body{min-width:0;flex:1}.item-title{font-weight:650;margin-bottom:4px}.item-meta{color:var(--muted);font-size:13px}
+    .shared{color:var(--muted);font-size:12px;margin-top:5px}.feed-comment{margin-top:9px;padding:9px 10px;background:#f5f5f7;border-radius:10px;font-size:13px}
+    .feed-comment b{font-weight:650}
+    .nav{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:8px 8px calc(8px + env(safe-area-inset-bottom));background:var(--nav);border-top:1px solid var(--line);backdrop-filter:blur(16px)}
+    .nav-inner{max-width:760px;margin:auto;display:grid;grid-template-columns:repeat(5,1fr)}
+    .nav button{border:0;background:none;color:#777;padding:5px 0;font-size:11px}.nav button.active{color:var(--accent);font-weight:650}
+    .nav-icon{display:block;font-size:21px;line-height:23px;margin-bottom:2px}.view{display:none}.view.active{display:block}
+    .toolbar{display:flex;gap:8px;align-items:center;margin:10px 0 14px}.toolbar button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px}
+    .date-label{flex:1;font-weight:650}.calendar-grid{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px}
+    .calendar-grid input{margin-bottom:12px}.calendar-day{padding:12px 0;border-top:1px solid var(--line)}
+    .timer-number{font-size:27px;font-weight:700;letter-spacing:-.5px}.small{color:var(--muted);font-size:13px}
+    .settings-row{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:15px;border-bottom:1px solid var(--line)}
+    .settings-row:last-child{border-bottom:0}.settings-row button{border:0;background:#f0f0f2;padding:8px 12px;border-radius:10px}
+    .modal-backdrop{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.35);display:none;align-items:flex-end}.modal-backdrop.open{display:flex}
+    .modal{width:100%;max-width:760px;margin:auto;background:#fff;border-radius:22px 22px 0 0;padding:18px;padding-bottom:calc(22px + env(safe-area-inset-bottom))}
+    .modal h2{margin:0 0 15px}label{display:block;margin:12px 0 6px;font-size:13px;color:var(--muted)}
+    input,select{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}
+    .form-actions{display:flex;gap:10px;margin-top:18px}.form-actions button{flex:1;padding:12px;border-radius:12px;border:0}
+    .cancel{background:#eee}.save{background:var(--accent);color:#fff}.auth-wrap{min-height:100vh;display:grid;place-items:center;padding:25px}
+    .auth-card{width:100%;max-width:430px;background:#fff;border:1px solid var(--line);border-radius:22px;padding:24px;box-shadow:0 8px 30px rgba(0,0,0,.06)}
+    .auth-card h1{margin:0;font-size:34px}.auth-card p{color:var(--muted);line-height:1.45}.auth-card label{margin-top:16px}
+    .auth-card .primary{width:100%;border:0;background:var(--accent);color:#fff;padding:13px;border-radius:12px;margin-top:18px;font-weight:650}
+    .auth-error{display:none;background:#fff1f0;color:#b42318;border-radius:12px;padding:11px;margin-top:12px;font-size:13px}
+    .auth-toggle{border:0;background:none;color:var(--accent);padding:12px 0 0;width:100%}
+    .status{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}.dot{width:8px;height:8px;border-radius:50%;background:#20a464}
+    .dot.off{background:#999}.sync-note{padding:11px 14px;background:#eef5ff;color:#2457a6;border-radius:12px;font-size:13px;margin-bottom:12px}
+    .hidden{display:none!important}
+  </style>
+</head>
+<body>
+
+<div id="authScreen" class="auth-wrap">
+  <div class="auth-card">
+    <h1>HomeSort</h1>
+    <p id="authSubtitle">Sign in to keep your household calendar, reminders and timers synced between devices.</p>
+
+    <div id="authError" class="auth-error"></div>
+
+    <label for="authEmail">Email</label>
+    <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com">
+
+    <label for="authPassword">Password</label>
+    <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password">
+
+    <button id="authButton" class="primary">Sign in</button>
+    <button id="authToggle" class="auth-toggle">Create an account</button>
+  </div>
+</div>
+
+<div id="appScreen" class="hidden">
+  <div class="app">
+    <header>
+      <h1 id="pageTitle">HomeSort</h1>
+      <p id="pageSubtitle"></p>
+    </header>
+
+    <main>
+      <div id="syncNote" class="sync-note hidden"></div>
+
+      <section id="homeView" class="view active">
+        <div class="section">
+          <div class="section-title"><h2>Today</h2><button class="add-btn" onclick="openAdd()">+</button></div>
+          <div id="todayList" class="card"></div>
+        </div>
+        <div class="section">
+          <div class="section-title"><h2>Activity</h2></div>
+          <div id="activityList" class="card"></div>
+        </div>
+      </section>
+
+      <section id="calendarView" class="view">
+        <div class="section">
+          <div class="toolbar">
+            <button onclick="changeDate(-1)">‹</button><div id="calendarDateLabel" class="date-label"></div>
+            <button onclick="changeDate(1)">›</button><button onclick="goToday()">Today</button>
+          </div>
+          <div class="calendar-grid">
+            <input id="calendarDate" type="date" onchange="selectDate(this.value)">
+            <div id="calendarItems"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="remindersView" class="view">
+        <div class="section">
+          <div class="section-title"><h2>Reminders</h2><button class="add-btn" onclick="openAdd('reminder')">+</button></div>
+          <div id="reminderList" class="card"></div>
+        </div>
+      </section>
+
+      <section id="timersView" class="view">
+        <div class="section">
+          <div class="section-title"><h2>Timers</h2><button class="add-btn" onclick="openAdd('timer')">+</button></div>
+          <div id="timerList" class="card"></div>
+        </div>
+      </section>
+
+      <section id="settingsView" class="view">
+        <div class="section">
+          <div class="card">
+            <div class="settings-row"><span>Account</span><span id="accountEmail" class="small"></span></div>
+            <div class="settings-row"><span>Household</span><span class="small">Home</span></div>
+            <div class="settings-row"><span>Sync</span><span id="syncStatus" class="status"><span class="dot"></span>Connected</span></div>
+            <div class="settings-row"><span>Local data</span><button onclick="importLocalData()">Import old device data</button></div>
+            <div class="settings-row"><span>Account</span><button onclick="signOutUser()">Sign out</button></div>
+            <div class="settings-row"><span>Version</span><span class="small">0.2 Firebase build</span></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <button class="active" onclick="showView('home',this)"><span class="nav-icon">⌂</span>Home</button>
+      <button onclick="showView('calendar',this)"><span class="nav-icon">▣</span>Calendar</button>
+      <button onclick="showView('reminders',this)"><span class="nav-icon">◉</span>Reminders</button>
+      <button onclick="showView('timers',this)"><span class="nav-icon">◷</span>Timers</button>
+      <button onclick="showView('settings',this)"><span class="nav-icon">⚙</span>Settings</button>
+    </div>
+  </nav>
+</div>
+
+<div id="modalBackdrop" class="modal-backdrop" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>Add to HomeSort</h2>
+    <label for="itemTitle">Title</label><input id="itemTitle" placeholder="What do you need to remember?">
+    <label for="itemType">Type</label>
+    <select id="itemType"><option value="reminder">Reminder</option><option value="calendar">Calendar event</option><option value="timer">Timer</option></select>
+    <label for="itemDate">Date & time</label><input id="itemDate" type="datetime-local">
+    <label for="itemShared">Sharing</label>
+    <select id="itemShared"><option value="shared">Shared with Larissa</option><option value="private">Private</option></select>
+    <div class="form-actions"><button class="cancel" onclick="closeModal()">Cancel</button><button class="save" onclick="saveItem()">Add</button></div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+  import {
+    getAuth, onAuthStateChanged, signInWithEmailAndPassword,
+    createUserWithEmailAndPassword, signOut
+  } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+  import {
+    getFirestore, collection, addDoc, doc, getDoc, getDocs,
+    onSnapshot, query, orderBy, serverTimestamp, setDoc
+  } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAtOSr0yNRMh26de_10Hx4wl7yIUjlqACo",
+    authDomain: "home-sort-76dab.firebaseapp.com",
+    projectId: "home-sort-76dab",
+    storageBucket: "home-sort-76dab.firebasestorage.app",
+    messagingSenderId: "828435391402",
+    appId: "1:828435391402:web:016df3312dfbcc41df41d3",
+    measurementId: "G-7X0ZY97EM5"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const HOUSEHOLD_ID = "home";
+  const ITEMS_PATH = ["households", HOUSEHOLD_ID, "items"];
+
+  let currentUser = null;
+  let items = [];
+  let unsubscribeItems = null;
+  let selectedDate = new Date();
+  let authMode = "signin";
+
+  const $ = id => document.getElementById(id);
+
+  window.showView = showView;
+  window.openAdd = openAdd;
+  window.closeModal = closeModal;
+  window.saveItem = saveItem;
+  window.changeDate = changeDate;
+  window.goToday = goToday;
+  window.selectDate = selectDate;
+  window.importLocalData = importLocalData;
+  window.signOutUser = signOutUser;
+
+  $("authToggle").addEventListener("click", () => {
+    authMode = authMode === "signin" ? "signup" : "signin";
+    $("authButton").textContent = authMode === "signin" ? "Sign in" : "Create account";
+    $("authToggle").textContent = authMode === "signin" ? "Create an account" : "I already have an account";
+    $("authSubtitle").textContent = authMode === "signin"
+      ? "Sign in to keep your household calendar, reminders and timers synced between devices."
+      : "Create your HomeSort account. Your household data will stay in Firebase.";
+    clearAuthError();
+  });
+
+  $("authButton").addEventListener("click", async () => {
+    const email = $("authEmail").value.trim();
+    const password = $("authPassword").value;
+    if (!email || !password) return showAuthError("Please enter your email and password.");
+    if (password.length < 6) return showAuthError("Firebase requires a password of at least 6 characters.");
+
+    $("authButton").disabled = true;
+    try {
+      if (authMode === "signin") await signInWithEmailAndPassword(auth, email, password);
+      else await createUserWithEmailAndPassword(auth, email, password);
+      clearAuthError();
+    } catch (error) {
+      showAuthError(readableAuthError(error));
+    } finally {
+      $("authButton").disabled = false;
+    }
+  });
+
+  $("authPassword").addEventListener("keydown", e => {
+    if (e.key === "Enter") $("authButton").click();
+  });
+
+  function readableAuthError(error) {
+    const code = error?.code || "";
+    const map = {
+      "auth/invalid-credential":"Email or password is incorrect.",
+      "auth/invalid-email":"That email address isn't valid.",
+      "auth/email-already-in-use":"An account already exists for that email.",
+      "auth/weak-password":"That password is too weak.",
+      "auth/too-many-requests":"Too many attempts. Please wait a little and try again.",
+      "auth/network-request-failed":"Network error. Check your internet connection."
+    };
+    return map[code] || error?.message || "Something went wrong.";
+  }
+
+  function showAuthError(message) {
+    $("authError").textContent = message;
+    $("authError").style.display = "block";
+  }
+  function clearAuthError() {
+    $("authError").textContent = "";
+    $("authError").style.display = "none";
+  }
+
+  onAuthStateChanged(auth, async user => {
+    currentUser = user || null;
+    if (!user) {
+      if (unsubscribeItems) unsubscribeItems();
+      unsubscribeItems = null;
+      $("authScreen").classList.remove("hidden");
+      $("appScreen").classList.add("hidden");
+      return;
+    }
+
+    $("authScreen").classList.add("hidden");
+    $("appScreen").classList.remove("hidden");
+    $("accountEmail").textContent = user.email || "";
+    $("pageSubtitle").textContent = "Connecting to your household…";
+
+    try {
+      await ensureHouseholdMembership(user.uid);
+      startRealtimeItems();
+    } catch (error) {
+      console.error(error);
+      setSyncStatus(false, error?.message || "Could not connect to household.");
+    }
+  });
+
+  async function ensureHouseholdMembership(uid) {
+    const householdRef = doc(db, "households", HOUSEHOLD_ID);
+    const snap = await getDoc(householdRef);
+    if (!snap.exists()) throw new Error("The HomeSort household document was not found.");
+
+    const data = snap.data();
+    const members = Array.isArray(data.members) ? data.members : [];
+    if (!members.includes(uid)) {
+      throw new Error("This account is not a member of the Home household.");
+    }
+  }
+
+  function startRealtimeItems() {
+    if (unsubscribeItems) unsubscribeItems();
+
+    const itemsRef = collection(db, ...ITEMS_PATH);
+    const q = query(itemsRef, orderBy("createdAt", "desc"));
+
+    unsubscribeItems = onSnapshot(q, snapshot => {
+      items = snapshot.docs.map(d => ({ id:d.id, ...d.data() }));
+      setSyncStatus(true);
+      render();
+    }, error => {
+      console.error(error);
+      setSyncStatus(false, "Firestore could not read the household data. Check your Firestore rules.");
+    });
+  }
+
+  function setSyncStatus(connected, message = "") {
+    const status = $("syncStatus");
+    if (status) {
+      status.innerHTML = `<span class="dot ${connected ? "" : "off"}"></span>${connected ? "Connected" : "Offline"}`;
+    }
+    const note = $("syncNote");
+    if (!connected && message) {
+      note.textContent = message;
+      note.classList.remove("hidden");
+    } else {
+      note.classList.add("hidden");
+    }
+  }
+
+  async function saveItem() {
+    if (!currentUser) return;
+
+    const title = $("itemTitle").value.trim();
+    const local = $("itemDate").value;
+    if (!title || !local) return;
+
+    const item = {
+      title,
+      type: $("itemType").value,
+      date: new Date(local).toISOString(),
+      shared: $("itemShared").value === "shared",
+      createdBy: currentUser.uid,
+      createdByEmail: currentUser.email || "",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      comments: []
+    };
+
+    try {
+      await addDoc(collection(db, ...ITEMS_PATH), item);
+      $("itemTitle").value = "";
+      closeModal();
+    } catch (error) {
+      console.error(error);
+      alert("I couldn't save that item to Firebase. Check your Firestore rules and try again.");
+    }
+  }
+
+  async function importLocalData() {
+    if (!currentUser) return;
+
+    let localItems = [];
+    try {
+      localItems = JSON.parse(localStorage.getItem("homesort-items-v1") || "[]");
+    } catch {}
+
+    if (!Array.isArray(localItems) || !localItems.length) {
+      alert("There isn't any old HomeSort data on this device to import.");
+      return;
+    }
+
+    const proceed = confirm(`Found ${localItems.length} old local item(s). Import them into the shared HomeSort household?`);
+    if (!proceed) return;
+
+    try {
+      for (const old of localItems) {
+        await addDoc(collection(db, ...ITEMS_PATH), {
+          title: old.title || "Imported item",
+          type: old.type || "reminder",
+          date: old.date || new Date().toISOString(),
+          shared: old.shared !== false,
+          createdBy: currentUser.uid,
+          createdByEmail: currentUser.email || "",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          comments: Array.isArray(old.comments) ? old.comments : []
+        });
+      }
+      alert("Imported successfully. The data is now stored in Firebase.");
+    } catch (error) {
+      console.error(error);
+      alert("The import stopped because Firebase rejected a write.");
+    }
+  }
+
+  async function signOutUser() {
+    await signOut(auth);
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[c]));
+  }
+
+  function typeIcon(type) {
+    return type === "calendar" ? "▣" : type === "timer" ? "◷" : "◉";
+  }
+  function typeName(type) {
+    return type === "calendar" ? "Calendar" : type === "timer" ? "Timer" : "Reminder";
+  }
+  function formatDateTime(iso) {
+    return new Date(iso).toLocaleString([], {
+      weekday:"short",day:"numeric",month:"short",hour:"numeric",minute:"2-digit"
+    });
+  }
+  function isSameDay(a,b) {
+    return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+  }
+
+  function renderItem(item) {
+    const comments = Array.isArray(item.comments) ? item.comments : [];
+    return `<div class="item">
+      <div class="icon">${typeIcon(item.type)}</div>
+      <div class="item-body">
+        <div class="item-title">${escapeHtml(item.title)}</div>
+        <div class="item-meta">${typeName(item.type)} · ${formatDateTime(item.date)}</div>
+        <div class="shared">${item.shared ? "Shared with Larissa" : "Private"}${item.createdByEmail ? " · Added by " + escapeHtml(item.createdByEmail) : ""}</div>
+        ${comments.length ? `<div class="feed-comment"><b>Discussion</b><br>${escapeHtml(comments[comments.length-1].text || "")}</div>` : ""}
+      </div>
+    </div>`;
+  }
+
+  function renderTimer(item) {
+    const target = new Date(item.date);
+    const diff = target - new Date();
+    const abs = Math.abs(diff);
+    const d = Math.floor(abs / 86400000);
+    const h = Math.floor((abs % 86400000)/3600000);
+    const m = Math.floor((abs % 3600000)/60000);
+    const label = diff >= 0 ? "Countdown" : "Since";
+    return `<div class="item">
+      <div class="icon">◷</div>
+      <div class="item-body">
+        <div class="item-title">${escapeHtml(item.title)}</div>
+        <div class="timer-number">${d}d ${h}h ${m}m</div>
+        <div class="item-meta">${label} · ${formatDateTime(item.date)}</div>
+        <div class="shared">${item.shared ? "Shared with Larissa" : "Private"}${item.createdByEmail ? " · Added by " + escapeHtml(item.createdByEmail) : ""}</div>
+      </div>
+    </div>`;
+  }
+
+  function render() {
+    const today = items.filter(i => i.date && isSameDay(new Date(i.date), new Date()))
+      .sort((a,b)=>new Date(a.date)-new Date(b.date));
+    $("todayList").innerHTML = today.length ? today.map(renderItem).join("") : `<div class="empty">Nothing scheduled for today.</div>`;
+
+    const activity = [...items].sort((a,b)=>dateValue(b.createdAt)-dateValue(a.createdAt));
+    $("activityList").innerHTML = activity.length ? activity.slice(0,10).map(renderItem).join("") : `<div class="empty">No activity yet.</div>`;
+
+    const reminders = items.filter(i=>i.type==="reminder").sort((a,b)=>new Date(a.date)-new Date(b.date));
+    $("reminderList").innerHTML = reminders.length ? reminders.map(renderItem).join("") : `<div class="empty">No reminders yet.</div>`;
+
+    const timers = items.filter(i=>i.type==="timer").sort((a,b)=>new Date(a.date)-new Date(b.date));
+    $("timerList").innerHTML = timers.length ? timers.map(renderTimer).join("") : `<div class="empty">No timers yet.</div>`;
+
+    renderCalendar();
+    $("pageSubtitle").textContent = currentUser
+      ? new Date().toLocaleDateString([], {weekday:"long",day:"numeric",month:"long"})
+      : "";
+  }
+
+  function dateValue(value) {
+    if (!value) return 0;
+    if (typeof value.toMillis === "function") return value.toMillis();
+    if (value.seconds) return value.seconds * 1000;
+    return new Date(value).getTime() || 0;
+  }
+
+  function showView(name, button) {
+    document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+    $(name+"View").classList.add("active");
+    document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
+    button.classList.add("active");
+    $("pageTitle").textContent = name === "home" ? "HomeSort" : name.charAt(0).toUpperCase()+name.slice(1);
+    render();
+  }
+
+  function openAdd(type) {
+    $("modalBackdrop").classList.add("open");
+    $("itemType").value = type || "reminder";
+    const d = new Date(Date.now()+3600000);
+    d.setSeconds(0,0);
+    $("itemDate").value = new Date(d - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+    $("itemTitle").focus();
+  }
+
+  function closeModal() {
+    $("modalBackdrop").classList.remove("open");
+  }
+
+  function renderCalendar() {
+    const iso = selectedDate.toISOString().slice(0,10);
+    $("calendarDate").value = iso;
+    $("calendarDateLabel").textContent = selectedDate.toLocaleDateString([], {
+      weekday:"long",day:"numeric",month:"long"
+    });
+    const dayItems = items.filter(i=>i.date && isSameDay(new Date(i.date), selectedDate))
+      .sort((a,b)=>new Date(a.date)-new Date(b.date));
+    $("calendarItems").innerHTML = dayItems.length ? dayItems.map(renderItem).join("") : `<div class="calendar-day small">Nothing scheduled.</div>`;
+  }
+
+  function changeDate(delta) {
+    selectedDate.setDate(selectedDate.getDate()+delta);
+    renderCalendar();
+  }
+  function goToday() {
+    selectedDate = new Date();
+    renderCalendar();
+  }
+  function selectDate(value) {
+    selectedDate = new Date(value+"T12:00:00");
+    renderCalendar();
+  }
+
+  setInterval(() => {
+    if (currentUser) render();
+  }, 30000);
+</script>
+</body>
+</html>
