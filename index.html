@@ -1,0 +1,2812 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#f2f4f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0f17" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="TidyNest">
+  <link rel="preload" href="onest.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <title>TidyNest</title>
+  <style>
+    /* TidyNest look: Onest throughout, logo navy for actions, logo green for links, "today" and confirmations.
+       Flat white cards on a cool grey ground; colour is reserved for people, state and the brand. */
+    @font-face{font-family:"Onest";src:url("onest.woff2") format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
+    :root{--font:"Onest",-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI","Helvetica Neue",Arial,sans-serif;
+      --bg:#f2f4f7;--card:#fff;--field:#fff;--fill:#f2f4f7;--fill-2:#e6eaf0;--text:#0f1b2d;--muted:#5d6a7b;--faint:#aab3bf;--line:#e0e5ec;--line-strong:#c9d1dc;--tick-border:#b9c2ce;
+      --accent:#0b2545;--on-accent:#fff;--accent-tint:#e7ecf3;--link:#0a7d6b;--focus:#0c9d86;--danger:#c9372c;--ok:#0a7d6b;--warn:#e8730c;
+      --nav:rgba(255,255,255,.94);--scrim:rgba(11,24,45,.45);
+      --note-bg:#e7ecf3;--note-fg:#0b2545;--bad-bg:#fdecea;--bad-fg:#a52a20;--soon-bg:#fff1c9;--soon-fg:#8f5b00;--info-bg:#e2f5f1;--info-fg:#0a6658;
+      --toast-bg:#0f1b2d;--toast-btn:#2a3a52;--toast-muted:#b7c2d1;--brand-navy:#0b2545;--brand-green:#0c9d86;
+      --c-blue:#1677ff;--c-pink:#e0447c;--c-teal:#0c9d86;--c-orange:#e8730c;--c-purple:#7950f2;--c-green:#2f9e44;--c-gold:#b88a00;--c-slate:#5c7c99;
+      --c-red:#e03131;--c-coral:#f06548;--c-lime:#66a80f;--c-aqua:#1098ad;--c-navy:#233a8f;--c-magenta:#be4bdb;--c-brown:#8d5a2b;--c-graphite:#343a40;--on-who:#fff}
+    /* Dark mode: follows the phone's own light/dark setting. */
+    @media (prefers-color-scheme: dark){:root{color-scheme:dark;--bg:#0a0f17;--card:#141b26;--field:#1c2532;--fill:#1c2532;--fill-2:#273140;--text:#eef2f7;--muted:#98a5b6;--faint:#556171;--line:#263140;--line-strong:#3a4759;--tick-border:#5b6777;--accent:#c3d3ee;--on-accent:#0b1a30;--accent-tint:#1b2a40;--link:#3fd0b5;--focus:#2cc4a9;--danger:#ff6b5e;--ok:#2cc4a9;--warn:#ff9f43;--nav:rgba(14,20,29,.92);--scrim:rgba(0,0,0,.62);--note-bg:#1b2a40;--note-fg:#c3d3ee;--bad-bg:#3a1714;--bad-fg:#ff9a90;--soon-bg:#3a2f0e;--soon-fg:#f0c53a;--info-bg:#10302b;--info-fg:#7fe0cd;--toast-bg:#273140;--toast-btn:#3a475a;--toast-muted:#b7c2d1;--brand-navy:#eef2f7;--brand-green:#2cc4a9;--c-blue:#4d9aff;--c-pink:#f783ac;--c-teal:#2cc4a9;--c-orange:#ff9f43;--c-purple:#a48bff;--c-green:#51cf66;--c-gold:#f0c53a;--c-slate:#9fb3c8;--c-red:#ff6b6b;--c-coral:#ff8a70;--c-lime:#a9e34b;--c-aqua:#3bc9db;--c-navy:#8ea2ff;--c-magenta:#da77f2;--c-brown:#c99a6b;--c-graphite:#ced4da;--on-who:#15171a}}
+
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;font-weight:500;line-height:1.4;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;touch-action:pan-x pan-y}
+    body{padding-bottom:calc(88px + env(safe-area-inset-bottom))}
+    button,input,select,textarea{font:inherit;color:inherit} button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+    button:disabled{opacity:.55;cursor:default}
+    :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+    .hidden{display:none!important}
+    /* icons fill their box unless a rule further down gives them a size */
+    svg.ic{display:block;width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+    /* page frame */
+    .app{max-width:760px;margin:0 auto;overflow-x:hidden;overflow-x:clip}
+    header{padding:calc(14px + env(safe-area-inset-top)) 18px 2px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .head-text{min-width:0}
+    header h1{margin:0;font-size:25px;font-weight:800;letter-spacing:-.6px;line-height:1.15;display:flex;align-items:center;gap:9px}
+    header h1 img{width:33px;height:auto;flex:0 0 auto}
+    header p{margin:2px 0 0;color:var(--muted);font-size:14px}
+    main{padding:0 12px}
+    .section{margin:14px 0}
+    .section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 6px 7px}
+    .section-title h2{margin:0;font-size:16px;font-weight:700;letter-spacing:-.2px}
+    .section-title .link,.link-btn,.auth-toggle{border:0;background:none;color:var(--link);font-weight:700}
+    .section-title .link{padding:6px 0;font-size:14px}
+    .add-btn{border:0;background:var(--accent);color:var(--on-accent);width:42px;height:42px;border-radius:50%;font-size:27px;font-weight:500;line-height:1;flex:0 0 auto;display:grid;place-items:center;padding:0 0 2px}
+    .card{background:var(--card);border-radius:18px;border:1px solid var(--line);overflow:hidden}
+    .empty{padding:16px 14px;text-align:center;color:var(--muted);font-size:14px}
+    .small{color:var(--muted);font-size:13px}
+
+    /* rows */
+    .item{display:flex;gap:10px;padding:9px 11px;border-bottom:1px solid var(--line);align-items:flex-start}
+    .item:last-child{border-bottom:0}
+    /* lists of items: every item is its own bordered card, with a gap between */
+    .card.list{background:none;border:0;border-radius:0;overflow:visible;display:flex;flex-direction:column;gap:7px}
+    .card.list > .item,.card.list > .item:last-child{background:var(--card);border:1.5px solid var(--line-strong);border-radius:14px}
+    .card.list > .empty{background:var(--card);border:1px dashed var(--line-strong);border-radius:16px}
+    .icon{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:0 0 auto;color:var(--who,var(--accent));background:var(--accent-tint);background:color-mix(in srgb,var(--who,var(--accent)) 15%,var(--card))}
+    .icon svg{width:18px;height:18px}
+    .who-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--who,var(--muted));margin-right:6px}
+    .who-dot + .who-dot{margin-left:-3px}
+    /* something assigned to more than one person wears each of their colours, side by side */
+    .item.multi .icon{background:var(--who-tint);color:var(--text)}
+    .item.multi .tick{border-color:transparent;background:linear-gradient(var(--card),var(--card)) padding-box,var(--who-grad) border-box}
+    .item.multi .tick.on{background:var(--who-grad) border-box}
+    .tick{width:30px;height:30px;flex:0 0 auto;border-radius:50%;border:2px solid var(--who,var(--tick-border));background:var(--card);color:var(--on-who);font-size:15px;font-weight:800;line-height:1;display:grid;place-items:center;padding:0}
+    .tick.on{background:var(--who,var(--ok));border-color:var(--who,var(--ok))}
+    .item-main,.item-text{min-width:0;flex:1}
+    .item-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 9px}
+    button.item-title{border:0;background:none;padding:0;text-align:left;color:inherit}
+    .item-body{min-width:0;flex:1;width:100%;border:0;background:none;padding:0;text-align:left;display:block}
+    .item-body > span{display:block}
+    .item-title{font-weight:700;font-size:15px;line-height:1.3;letter-spacing:-.1px;overflow-wrap:anywhere}
+    .item.done .item-title{text-decoration:line-through;color:var(--muted);font-weight:600}
+    .card.list > .item.done{opacity:.55;filter:grayscale(1)}
+    .item-body > .item-meta{color:var(--muted);font-size:12px;line-height:1.35;display:flex;flex-wrap:wrap;align-items:center;gap:1px 9px;margin-top:1px}
+    /* time left: green with a day or more to go, amber under a day, red within three hours */
+    .until{color:var(--ok);font-weight:700;white-space:nowrap}.until.soon{color:var(--soon-fg)}.until.close{color:var(--danger)}.until.now{color:var(--accent)}
+    .nw{white-space:nowrap}
+    .badge{display:inline-block;padding:0 7px;border-radius:999px;font-size:11px;font-weight:800;vertical-align:1px}
+    .badge.overdue{background:var(--bad-bg);color:var(--bad-fg)}.badge.due{background:var(--soon-bg);color:var(--soon-fg)}
+    .item-notes{font-size:13px;line-height:1.3;margin-top:3px;white-space:pre-wrap;overflow-wrap:anywhere}
+    .shared{color:var(--muted);font-size:12px;white-space:nowrap}
+    .timer-number{font-size:21px;font-weight:800;letter-spacing:-.5px;line-height:1.2;font-variant-numeric:tabular-nums}
+    .timer-number.over{color:var(--muted)}
+
+    /* acknowledge + chat on Home */
+    .chat{display:flex;flex-direction:column;gap:3px;margin-top:6px}
+    .item-top{display:flex;align-items:flex-start;gap:8px}
+    .chat-msg{background:var(--fill);border-radius:10px;padding:4px 9px;font-size:13px;line-height:1.35;overflow-wrap:anywhere}
+    .chat-msg b{font-weight:800;margin-right:6px}
+    .chat-msg time{color:var(--muted);font-size:11px;margin-left:8px;white-space:nowrap}
+    .link-btn{font-size:13px;padding:2px 0;text-align:left}
+    .row-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+    .pill{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 14px;font-size:13px;font-weight:700}
+    .pill.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+    .pill{transition:transform .12s ease-out}.pill:active{transform:scale(.92)}
+    .pill.chat-btn,.pill.ack-btn{padding:5px 10px}
+    .pill.chat-btn{color:var(--accent)}
+    .pill.chat-btn svg,.pill.ack-btn svg{width:18px;height:18px}
+    .ack-status{width:30px;height:30px;display:grid;place-items:center;color:var(--faint)}
+    .ack-status svg{width:18px;height:18px}.ack-status.ok{color:var(--ok)}.ack-status.ok svg{width:20px;height:20px}
+    .ack-note,.done-by{display:inline-flex;align-items:center;gap:4px;color:var(--ok);font-weight:700;white-space:nowrap}.ack-note svg,.done-by svg{width:13px;height:13px}
+    #chatList{max-height:46vh;overflow-y:auto;margin-top:12px}
+    .chat-compose{display:flex;gap:8px;margin-top:12px}
+    .chat-compose button{border:0;background:var(--accent);color:var(--on-accent);border-radius:14px;padding:0 18px;font-weight:700;flex:0 0 auto}
+
+    /* bottom bar */
+    .nav{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:7px 8px calc(7px + env(safe-area-inset-bottom));background:var(--nav);border-top:1px solid var(--line);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+    .nav-inner{max-width:760px;margin:auto;display:flex;justify-content:space-between}
+    .nav button{border:0;background:none;color:var(--muted);padding:3px 1px;font-size:10px;font-weight:600;letter-spacing:-.1px;white-space:nowrap;flex:1 1 auto;min-width:0}
+    .nav-icon{display:block;position:relative;width:46px;height:30px;padding:3px 11px;margin:0 auto 2px;border-radius:999px}
+    @media (max-width: 350px){.nav button{font-size:8.5px;letter-spacing:-.2px}.nav-icon{width:38px;padding:3px 7px}}
+    .nav-badge{position:absolute;top:-2px;right:2px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--danger);color:#fff;font-size:10px;font-weight:800;font-style:normal;line-height:17px;text-align:center;font-variant-numeric:tabular-nums}
+    .nav button.active{color:var(--accent);font-weight:800}
+    .nav button.active .nav-icon{background:var(--accent-tint)}
+    .view{display:none}.view.active{display:block}
+
+    /* a button that tucks a list away until it's wanted (completed reminders) */
+    .fold{display:flex;align-items:center;gap:8px;width:100%;border:1.5px solid var(--line-strong);background:var(--card);border-radius:14px;padding:12px 14px;font-size:15px;font-weight:700;text-align:left}
+    .fold-count{color:var(--muted);font-weight:600;flex:1}
+    .fold svg{width:20px;height:20px;flex:0 0 auto;color:var(--muted);transition:transform .2s}
+    .fold[aria-expanded="true"] svg{transform:rotate(180deg)}
+    .fold-note{margin:10px 6px 7px;align-items:flex-start}
+    .fold-note .link{white-space:nowrap;padding:0}
+
+    /* calendar */
+    .toolbar{display:flex;gap:8px;align-items:center;margin:14px 0 14px}
+    .toolbar button{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:8px 13px;font-weight:700;font-size:15px}
+    .date-label{flex:1;font-weight:800;font-size:19px;letter-spacing:-.3px;padding-left:4px}
+    .calendar-grid{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 8px}
+    .cal-head,.cal-days{display:grid;grid-template-columns:repeat(7,1fr)}
+    .cal-head{text-align:center;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px}
+    .cal-days{gap:2px}
+    .cal-cell{border:0;background:none;height:46px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0;font-weight:600}
+    .cal-cell.other{color:var(--faint)}
+    .cal-cell.today .num{color:var(--link);font-weight:800}
+    .cal-cell.sel{background:var(--accent-tint);box-shadow:inset 0 0 0 2px var(--accent)}.cal-cell.sel .num{font-weight:800}
+    .dots{display:flex;gap:3px;height:6px}
+    .dot-i{width:6px;height:6px;border-radius:50%;background:var(--who,var(--muted))}
+
+    /* settings */
+    .settings-row{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:14px 16px;border-bottom:1px solid var(--line);font-weight:600}
+    .settings-row:last-child{border-bottom:0}
+    .settings-row.stack{flex-direction:column;align-items:flex-start;gap:12px}
+    .settings-row > span:first-child{flex:0 0 auto}
+    .settings-row .val{display:flex;align-items:center;gap:10px;min-width:0;justify-content:flex-end;text-align:right;flex-wrap:wrap;font-weight:500}
+    .settings-row button{border:0;background:var(--fill-2);padding:8px 13px;border-radius:10px;font-size:14px;font-weight:700;flex:0 0 auto}
+    .swatches{display:flex;flex-wrap:wrap;gap:8px}
+    .settings-row .swatch{width:32px;height:32px;border-radius:50%;padding:0;border:0;background:var(--who);color:var(--on-who);font-size:13px;font-weight:800;display:grid;place-items:center}
+    .settings-row .swatch.on{box-shadow:0 0 0 3px var(--card),0 0 0 5px var(--who)}
+    .settings-row .swatch:disabled{opacity:.4}
+    .status{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:0 0 auto}.dot.off{background:var(--muted)}
+    .sync-note{padding:11px 14px;background:var(--note-bg);color:var(--note-fg);border-radius:12px;font-size:13px;margin:12px 0}
+    .sync-note.bad{background:var(--bad-bg);color:var(--bad-fg)}
+
+    /* sheets and forms */
+    .modal-backdrop{position:fixed;inset:0;z-index:50;background:var(--scrim);display:none;align-items:flex-end}
+    .modal-backdrop.open{display:flex}
+    .modal{width:100%;max-width:760px;margin:0 auto;background:var(--card);border-radius:24px 24px 0 0;padding:22px 18px;padding-bottom:calc(22px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto}
+    .modal-backdrop.open .modal{animation:sheet-up .2s ease-out}
+    @keyframes sheet-up{from{transform:translateY(28px);opacity:.6}to{transform:none;opacity:1}}
+    @media (prefers-reduced-motion: reduce){.modal-backdrop.open .modal{animation:none}.toast{transition:none}}
+    .modal h2{margin:0 0 6px;font-size:22px;font-weight:800;letter-spacing:-.4px;overflow-wrap:anywhere}
+    .modal p{color:var(--muted);line-height:1.45;margin:6px 0 0}
+    label,.label{display:block;margin:14px 0 6px;font-size:13px;font-weight:700;color:var(--muted)}
+    input,select,textarea{width:100%;border:1px solid var(--line);border-radius:14px;padding:12px 13px;background:var(--field);font-size:16px;font-weight:500}
+    input:focus-visible,select:focus-visible,textarea:focus-visible{outline-offset:0;border-color:var(--focus)}
+    textarea{min-height:64px;resize:vertical}
+    select:disabled{background:var(--fill);color:var(--muted)}
+    .form-actions{display:flex;gap:10px;margin-top:20px}
+    .form-actions button{flex:1;padding:13px;border-radius:14px;border:0;font-weight:700}
+    .cancel{background:var(--fill-2)}.save{background:var(--accent);color:var(--on-accent)}.danger{background:var(--danger);color:#fff}
+    .form-error{display:none;color:var(--bad-fg);font-size:13px;font-weight:600;margin-top:10px}
+    .delete-btn{width:100%;margin-top:14px;padding:13px;border-radius:14px;border:0;background:var(--bad-bg);color:var(--bad-fg);font-weight:700}
+    /* the add / edit form: rows of big buttons to pick from, and separate date and time fields */
+    .seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:7px}
+    .seg button{border:1.5px solid var(--line-strong);background:var(--field);border-radius:14px;padding:9px 6px;min-height:48px;min-width:0;font-size:14px;font-weight:700;line-height:1.2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+    .seg button svg{width:22px;height:22px}
+    .seg button.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+    .seg.who{grid-auto-flow:row;grid-template-columns:repeat(auto-fit,minmax(104px,1fr))}
+    .seg.who button{flex-direction:row;gap:2px}
+    .seg.who button.on{background:var(--accent-tint);background:color-mix(in srgb,var(--who) 16%,var(--card));border-color:var(--who);color:var(--text)}
+    .seg.who .who-dot{width:11px;height:11px}
+    .field-head{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:14px 0 6px}
+    .field-head label{margin:0}
+    .quick{display:flex;gap:6px}
+    .quick button{border:0;background:var(--fill-2);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:700}
+    .when-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+    /* time: hour and minutes are short pick-lists (minutes in fives), am/pm flips with a tap */
+    .time-pick{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) minmax(0,1fr);align-items:center;gap:3px}
+    .time-pick select,.time-pick button{-webkit-appearance:none;appearance:none;width:100%;min-height:48px;padding:0 2px;border:1px solid var(--line);border-radius:12px;background:var(--field);font-size:16px;font-weight:600;text-align:center;text-align-last:center}
+    .time-pick button{width:auto;margin-left:3px;background:var(--fill-2);border-color:transparent}
+    .time-pick span{font-weight:800;color:var(--muted)}
+    .when-row.dateonly{grid-template-columns:minmax(0,1fr)}
+    input[type=date]{-webkit-appearance:none;appearance:none;min-width:0;min-height:48px;text-align:left}
+    input::-webkit-date-and-time-value{text-align:left}
+    @media (max-width: 350px){.when-row input{padding-left:9px;padding-right:9px}}
+    .form-hint{font-size:12px;color:var(--muted);margin-top:6px}.form-hint.bad{color:var(--bad-fg);font-weight:600}
+    /* location: matching addresses under the box while typing, and the tap-for-directions line on a row */
+    .place-list{margin-top:6px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--field)}
+    .place-list button{display:block;width:100%;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;padding:10px 13px;font-size:14px;line-height:1.3;overflow-wrap:anywhere}
+    .place-list b{display:block;font-weight:700}
+    .place-list button span{color:var(--muted);font-size:12px}
+    .place-list .credit{padding:6px 13px;font-size:11px;color:var(--muted)}
+    /* suggestions under the Title box, from things added before */
+    .memo-list{margin-top:6px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--field)}
+    .memo-row{display:flex;align-items:stretch;border-bottom:1px solid var(--line)}
+    .memo-row:last-child{border-bottom:0}
+    .memo-pick{flex:1;min-width:0;display:flex;align-items:center;gap:10px;border:0;background:none;text-align:left;padding:9px 4px 9px 13px;font-size:14px;line-height:1.3}
+    .memo-pick svg{width:18px;height:18px;flex:0 0 auto;color:var(--muted)}
+    .memo-pick span{min-width:0;overflow-wrap:anywhere}
+    .memo-pick b{display:block;font-weight:700}
+    .memo-pick small{display:block;color:var(--muted);font-size:12px}
+    .memo-forget{flex:0 0 auto;width:44px;border:0;background:none;color:var(--muted);font-size:20px;line-height:1}
+    .place{display:inline-flex;align-items:flex-start;gap:3px;color:var(--muted);font-size:12px;font-weight:500;line-height:1.35;text-decoration:none;overflow-wrap:anywhere}
+    .place svg{width:13px;height:13px;flex:0 0 auto;margin-top:2px}
+    /* The add / edit sheet is packed tight so a whole event fits on one phone screen without scrolling. */
+    #itemSheet{padding:14px 16px calc(14px + env(safe-area-inset-bottom));max-height:96vh;max-height:96dvh}
+    #itemSheet h2{font-size:17px;margin:0 0 8px;letter-spacing:-.2px}
+    #itemSheet label,#itemSheet .label{margin:0;font-size:12px}
+    #itemSheet input:not([type=checkbox]),#itemSheet textarea{padding:10px 12px;border-radius:12px}
+    #itemTitle,#itemPlace,#itemNotes,#timerModeWrap,#repeatWrap{margin-top:8px}
+    #itemNotes{display:block;min-height:44px;height:44px;max-height:150px;resize:none;line-height:1.35}
+    #itemSheet .seg{gap:6px}
+    #upPicker{margin-top:6px}
+    #itemSheet .seg button{min-height:44px;border-radius:12px;padding:5px;font-size:13.5px}
+    #typePicker button{flex-direction:row;gap:7px}
+    #typePicker button svg{width:19px;height:19px;flex:0 0 auto}
+    @media (max-width: 350px){#typePicker button{gap:4px;font-size:12.5px}#typePicker button svg{width:16px;height:16px}}
+    #itemSheet .field-head{margin:8px 0 4px;align-items:center;min-height:26px}
+    #itemSheet .field-head .form-hint{margin:0;text-align:right}
+    #itemSheet .quick{gap:5px;align-items:center}
+    #itemSheet .quick button,.chip-toggle > span{display:block;border:0;background:var(--fill-2);border-radius:999px;padding:4px 10px;font-size:12.5px;font-weight:700;line-height:1.35;white-space:nowrap}
+    /* "All day" is a real checkbox laid invisibly over its pill */
+    .chip-toggle{position:relative;display:block}
+    .chip-toggle input{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;opacity:0}
+    .chip-toggle input:checked + span{background:var(--accent);color:var(--on-accent)}
+    .chip-toggle input:focus-visible + span{outline:2px solid var(--focus);outline-offset:2px}
+    #itemSheet input[type=date],#itemSheet .time-pick select,#itemSheet .time-pick button{min-height:44px}
+    .seg.repeat{grid-auto-flow:row;grid-template-columns:20px repeat(4,minmax(0,1fr));align-items:center}
+    .repeat-ic{color:var(--muted);width:20px;height:20px}
+    #itemSheet .seg.repeat button{font-size:12.5px;padding:5px 2px}
+    @media (max-width: 350px){#itemSheet .seg.repeat{gap:4px}#itemSheet .seg.repeat button{font-size:11px;letter-spacing:-.2px}}
+    .repeat-custom{display:grid;grid-template-columns:auto minmax(0,.7fr) minmax(0,1.3fr);align-items:center;gap:6px;margin-top:6px;font-size:13px;font-weight:700;color:var(--muted);padding-left:26px}
+    .repeat-custom select{min-height:44px;padding:0 10px;border-radius:12px;font-weight:600;color:var(--text)}
+    .people{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:8px}
+    .people.stack{grid-template-columns:minmax(0,1fr)}
+    @media (max-width: 350px){.people{grid-template-columns:minmax(0,1fr)}}
+    .people .label{margin-bottom:4px!important}
+    .people .seg.who{grid-template-columns:repeat(auto-fit,minmax(70px,1fr))}
+    #itemSheet .form-hint{margin-top:4px}
+    #itemSheet .form-error{margin-top:6px}
+    #itemSheet .form-actions{margin-top:10px}
+    #itemSheet .form-actions button{padding:11px}
+    #itemSheet .delete-btn{margin-top:8px;padding:10px}
+    .repeats{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}.repeats svg{width:12px;height:12px}
+    .invite-code{font-size:32px;font-weight:800;letter-spacing:3px;text-align:center;padding:18px;background:var(--fill);border-radius:16px;margin-top:14px;font-variant-numeric:tabular-nums;user-select:all;-webkit-user-select:all}
+
+    /* sign-in and welcome */
+    .auth-wrap{min-height:100vh;display:grid;place-items:center;padding:24px 20px}
+    .auth-card{width:100%;max-width:430px;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:26px 22px}
+    .auth-card h1{margin:0;font-size:32px;font-weight:800;letter-spacing:-.8px}
+    .brand{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;margin-bottom:8px}
+    .brand img{width:124px;height:auto}
+    .brand h1{color:var(--brand-navy)}.brand h1 span,.wordmark span{color:var(--brand-green)}
+    .brand .tagline{font-size:11px;font-weight:700;letter-spacing:2.4px;text-transform:uppercase;color:var(--brand-navy);margin:0;line-height:1.2}
+    .wordmark{color:var(--brand-navy)}
+    .auth-card p{color:var(--muted);line-height:1.45}.auth-card label{margin-top:16px}
+    .auth-card .primary{width:100%;border:0;background:var(--accent);color:var(--on-accent);padding:14px;border-radius:14px;margin-top:18px;font-weight:700}
+    .auth-card .primary.alt{background:var(--accent-tint);color:var(--accent)}
+    .auth-error{display:none;background:var(--bad-bg);color:var(--bad-fg);border-radius:12px;padding:11px 13px;margin-top:12px;font-size:13px;font-weight:600}
+    .auth-error.info{background:var(--info-bg);color:var(--info-fg)}
+    .auth-toggle{padding:14px 0 0;width:100%}
+    .divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px;margin:22px 0 4px}
+    .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+
+    /* phones turned sideways */
+    .rotate-note{display:none}
+    @media (orientation: landscape) and (max-height: 520px) and (min-aspect-ratio: 3/2) and (pointer: coarse){
+      .rotate-note{display:grid;place-items:center;position:fixed;inset:0;z-index:200;background:var(--bg);color:var(--text);text-align:center;padding:24px}
+      .rotate-note img{width:72px;height:auto;margin:0 auto 10px;display:block}
+      .rotate-note b{display:block;font-size:19px;font-weight:800;letter-spacing:-.3px}
+      .rotate-note span{display:block;color:var(--muted);font-size:14px;margin-top:4px}
+      body{overflow:hidden}
+    }
+
+    /* toasts */
+    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(104px + env(safe-area-inset-bottom));z-index:70;background:var(--toast-bg);color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;font-weight:600;max-width:88vw;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s}
+    .toast.show{opacity:1}
+  </style>
+</head>
+<body>
+
+<div id="loadingScreen" class="auth-wrap">
+  <div class="small" id="loadingText">Loading TidyNest…</div>
+</div>
+
+<div id="authScreen" class="auth-wrap hidden">
+  <form class="auth-card" id="authForm" novalidate>
+    <div class="brand">
+      <picture><source srcset="logo-mark-dark.png" media="(prefers-color-scheme: dark)"><img src="logo-mark.png" alt="" width="240" height="202"></picture>
+      <h1>Tidy<span>Nest</span></h1>
+      <p class="tagline">Life at home, organised.</p>
+    </div>
+    <p id="authSubtitle">Sign in to keep your household calendar, reminders and timers synced between devices.</p>
+
+    <div id="authError" class="auth-error" role="alert"></div>
+
+    <div id="authNameWrap" class="hidden">
+      <label for="authName">Your name</label>
+      <input id="authName" type="text" autocomplete="given-name" placeholder="First name" maxlength="40">
+    </div>
+
+    <label for="authEmail">Email</label>
+    <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com">
+
+    <label for="authPassword">Password</label>
+    <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password">
+
+    <button id="authButton" type="submit" class="primary">Sign in</button>
+    <button id="authToggle" type="button" class="auth-toggle" data-action="auth-toggle">Create an account</button>
+    <button id="authReset" type="button" class="auth-toggle" data-action="auth-reset">Forgot password?</button>
+  </form>
+</div>
+
+<div id="setupScreen" class="auth-wrap hidden">
+  <div class="auth-card">
+    <h1>Welcome</h1>
+    <p>Signed in as <b id="setupEmail"></b>. Everything in TidyNest lives in a household that only you and the people you invite can see.</p>
+
+    <div id="setupError" class="auth-error" role="alert"></div>
+
+    <label for="joinCode">Been given an invite code?</label>
+    <input id="joinCode" type="text" placeholder="ABCD-EFGH" autocapitalize="characters" autocomplete="off" spellcheck="false" maxlength="12">
+    <button id="joinButton" class="primary" data-action="join-household">Join household</button>
+
+    <div class="divider">or</div>
+
+    <label for="householdName">Start a new household</label>
+    <input id="householdName" type="text" value="Home" maxlength="60">
+    <button id="createButton" class="primary alt" data-action="create-household">Create household</button>
+
+    <button class="auth-toggle" data-action="retry-household">Check again</button>
+    <button class="auth-toggle" data-action="sign-out">Sign out</button>
+  </div>
+</div>
+
+<div id="appScreen" class="hidden">
+
+  <div class="app">
+    <header>
+      <div class="head-text">
+        <h1><picture><source srcset="logo-mark-dark.png" media="(prefers-color-scheme: dark)"><img src="logo-mark.png" alt="" width="240" height="202"></picture><span id="pageTitle" class="wordmark">Tidy<span>Nest</span></span></h1>
+        <p id="pageSubtitle"></p>
+      </div>
+      <button id="headerAdd" class="add-btn" data-action="add-here" aria-label="Add">+</button>
+    </header>
+
+    <main>
+      <div id="syncNote" class="sync-note hidden" role="status"></div>
+
+      <section id="homeView" class="view active">
+        <div id="overdueSection" class="section hidden">
+          <div class="section-title"><h2>Overdue</h2></div>
+          <div id="overdueList" class="card list"></div>
+        </div>
+        <div class="section">
+          <div class="section-title"><h2>Today</h2></div>
+          <div id="todayList" class="card list"></div>
+        </div>
+        <div class="section">
+          <div class="section-title"><h2>Coming up</h2></div>
+          <div id="upcomingList" class="card list"></div>
+        </div>
+      </section>
+
+      <section id="calendarView" class="view">
+        <div class="section">
+          <div class="toolbar">
+            <button data-action="cal-prev" aria-label="Previous month">‹</button>
+            <div id="calMonthLabel" class="date-label"></div>
+            <button data-action="cal-today">Today</button>
+            <button data-action="cal-next" aria-label="Next month">›</button>
+          </div>
+          <div class="calendar-grid">
+            <div class="cal-head"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+            <div id="calDays" class="cal-days"></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title"><h2 id="calDayLabel"></h2></div>
+          <div id="calendarItems" class="card list"></div>
+        </div>
+      </section>
+
+      <section id="remindersView" class="view">
+        <div class="section">
+          <div class="section-title"><h2>Reminders</h2></div>
+          <div id="reminderList" class="card list"></div>
+        </div>
+        <div id="doneSection" class="section hidden">
+          <button id="doneToggle" class="fold" data-action="toggle-done-list" aria-expanded="false" aria-controls="doneBox">
+            <span>Completed reminders</span><span id="doneCount" class="fold-count"></span>
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9.5 6 6 6-6" stroke-width="2.2"/></svg>
+          </button>
+          <div id="doneBox" class="hidden">
+            <div class="section-title fold-note"><span class="small">Kept for a year after they're ticked off, then removed.</span><button class="link" data-action="clear-done">Clear completed</button></div>
+            <div id="doneList" class="card list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="timersView" class="view">
+        <div class="section">
+          <div class="section-title"><h2>Counting down</h2></div>
+          <div id="timerDownList" class="card list"></div>
+        </div>
+        <div class="section">
+          <div class="section-title"><h2>Counting up</h2></div>
+          <div id="timerUpList" class="card list"></div>
+        </div>
+      </section>
+
+      <section id="notificationsView" class="view">
+        <div class="section">
+          <div class="section-title"><h2>Recent activity</h2><button id="ackAll" class="link hidden" data-action="ack-all">Acknowledge all</button></div>
+          <div id="activityList" class="card list"></div>
+        </div>
+      </section>
+
+      <section id="settingsView" class="view">
+        <div class="section"><div id="settingsList" class="card"></div></div>
+      </section>
+    </main>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <button class="active" data-action="view" data-view="home"><span class="nav-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.8V20h13V9.8"/><path d="M10 20v-5.5h4V20"/></svg></span>Home</button>
+      <button data-action="view" data-view="calendar"><span class="nav-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="M7.5 13.3h9M7.5 16.9h5.5"/></svg></span>Calendar</button>
+      <button data-action="view" data-view="reminders"><span class="nav-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 6.5 1.6 1.6L8.4 5"/><path d="M11.5 6.6H20"/><path d="m4 12.5 1.6 1.6 2.8-3.1"/><path d="M11.5 12.6H20"/><rect x="4.2" y="16.8" width="3.6" height="3.6" rx=".8"/><path d="M11.5 18.6H20"/></svg></span>Reminders</button>
+      <button data-action="view" data-view="timers"><span class="nav-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V9.8M10 3.2h4M12 3.2v3.3M17.6 7.4l1.3-1.3"/></svg></span>Timers</button>
+      <button data-action="view" data-view="notifications" aria-label="Notifications"><span class="nav-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6a5.6 5.6 0 0 0-5.6 5.6c0 4.6-1.9 6-2.1 7.8h15.4c-.2-1.8-2.1-3.2-2.1-7.8A5.6 5.6 0 0 0 12 3.6z"/><path d="M10 19.8a2.1 2.1 0 0 0 4 0"/></svg><i id="navBadge" class="nav-badge hidden"></i></span>Notifications</button>
+      <button data-action="view" data-view="settings"><span class="nav-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.52 5.57L10.75 3.09L13.25 3.09L13.48 5.57A6.6 6.6 0 0 1 15.50 6.40L15.50 6.40L17.42 4.81L19.19 6.58L17.60 8.50A6.6 6.6 0 0 1 18.43 10.52L18.43 10.52L20.91 10.75L20.91 13.25L18.43 13.48A6.6 6.6 0 0 1 17.60 15.50L17.60 15.50L19.19 17.42L17.42 19.19L15.50 17.60A6.6 6.6 0 0 1 13.48 18.43L13.48 18.43L13.25 20.91L10.75 20.91L10.52 18.43A6.6 6.6 0 0 1 8.50 17.60L8.50 17.60L6.58 19.19L4.81 17.42L6.40 15.50A6.6 6.6 0 0 1 5.57 13.48L5.57 13.48L3.09 13.25L3.09 10.75L5.57 10.52A6.6 6.6 0 0 1 6.40 8.50L6.40 8.50L4.81 6.58L6.58 4.81L8.50 6.40A6.6 6.6 0 0 1 10.52 5.57Z"/><circle cx="12" cy="12" r="2.7"/></svg></span>Settings</button>
+    </div>
+  </nav>
+</div>
+
+<div id="backdrop" class="modal-backdrop">
+  <div id="itemSheet" class="modal hidden" role="dialog" aria-labelledby="itemSheetTitle">
+    <h2 id="itemSheetTitle">New reminder</h2>
+    <div id="typePicker" class="seg" role="group" aria-label="What are you adding?"></div>
+
+    <input id="itemTitle" aria-label="Title" placeholder="What do you need to remember?" maxlength="200" enterkeyhint="done" autocomplete="off" autocapitalize="sentences">
+    <div id="memoList" class="memo-list hidden"></div>
+
+    <div id="placeWrap">
+      <input id="itemPlace" aria-label="Location" placeholder="Location (optional)" maxlength="200" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" enterkeyhint="done">
+      <div id="placeList" class="place-list hidden"></div>
+    </div>
+
+    <div id="timerModeWrap" class="hidden">
+      <div id="modePicker" class="seg" role="group" aria-label="This timer should">
+        <button type="button" data-action="pick-mode" data-mode="down">Count down</button>
+        <button type="button" data-action="pick-mode" data-mode="count-up">Count up</button>
+      </div>
+      <div id="upPicker" class="seg hidden" role="group" aria-label="Count up from">
+        <button type="button" data-action="pick-mode" data-mode="upnow">From now</button>
+        <button type="button" data-action="pick-mode" data-mode="up">From a time</button>
+      </div>
+    </div>
+
+    <div id="itemDateWrap">
+      <div class="field-head">
+        <label id="itemDateLabel" for="itemDate">Starts</label>
+        <div class="quick">
+          <button type="button" data-action="quick-date" data-days="0">Today</button>
+          <span id="allDayRow" class="chip-toggle hidden"><input id="itemAllDay" type="checkbox" aria-label="All day"><span>All day</span></span>
+          <span id="remDateRow" class="chip-toggle hidden"><input id="remDate" type="checkbox" aria-label="Give it a date"><span>Date</span></span>
+          <span id="remTimeRow" class="chip-toggle hidden"><input id="remTime" type="checkbox" aria-label="Give it a time"><span>Time</span></span>
+          <span id="remEndRow" class="chip-toggle hidden"><input id="remEnd" type="checkbox" aria-label="Give it an end"><span>End</span></span>
+        </div>
+      </div>
+      <div class="when-row"><input id="itemDate" type="date"><div id="itemTime" class="time-pick" role="group" aria-label="Time"><select id="itemTimeH" aria-label="Hour"></select><span aria-hidden="true">:</span><select id="itemTimeM" aria-label="Minutes"></select><button type="button" id="itemTimeP" data-action="flip-ampm" data-for="itemTime">am</button></div></div>
+    </div>
+    <div id="itemEndWrap" class="hidden">
+      <div class="field-head"><label for="itemEndDate">Ends</label><span id="itemSpan" class="form-hint" aria-live="polite"></span></div>
+      <div class="when-row"><input id="itemEndDate" type="date"><div id="itemEndTime" class="time-pick" role="group" aria-label="End time"><select id="itemEndTimeH" aria-label="Hour"></select><span aria-hidden="true">:</span><select id="itemEndTimeM" aria-label="Minutes"></select><button type="button" id="itemEndTimeP" data-action="flip-ampm" data-for="itemEndTime">am</button></div></div>
+    </div>
+
+    <div id="repeatWrap">
+      <div id="repeatPicker" class="seg repeat" role="group" aria-label="Repeat">
+        <span class="repeat-ic" title="Repeat"></span>
+        <button type="button" data-action="pick-repeat" data-repeat="weekly">Weekly</button>
+        <button type="button" data-action="pick-repeat" data-repeat="fortnightly">Fortnightly</button>
+        <button type="button" data-action="pick-repeat" data-repeat="monthly">Monthly</button>
+        <button type="button" data-action="pick-repeat" data-repeat="custom">Custom</button>
+      </div>
+      <div id="repeatCustom" class="repeat-custom hidden"><span>Every</span><select id="repeatEvery" aria-label="How many"></select><select id="repeatUnit" aria-label="Days, weeks, months or years"></select></div>
+      <div id="repeatHint" class="form-hint hidden"></div>
+    </div>
+
+    <div id="peopleRow" class="people">
+      <div id="forWrap">
+        <div class="label" id="forLabel">Assigned to</div>
+        <div id="forPicker" class="seg who" role="group" aria-labelledby="forLabel"></div>
+      </div>
+      <div id="shareWrap">
+        <div class="label" id="sharePickerLabel">Who can see it</div>
+        <div id="sharePicker" class="seg" role="group" aria-labelledby="sharePickerLabel"></div>
+      </div>
+    </div>
+    <div id="shareHint" class="form-hint hidden"></div>
+
+    <textarea id="itemNotes" rows="1" aria-label="Notes" placeholder="Notes (optional)" maxlength="2000"></textarea>
+    <div id="itemError" class="form-error" role="alert"></div>
+    <div class="form-actions"><button class="cancel" data-action="close-sheet">Cancel</button><button id="itemSave" class="save" data-action="save-item">Add</button></div>
+
+    <div id="itemExtras" class="hidden">
+      <button class="delete-btn" data-action="delete-item">Delete</button>
+    </div>
+  </div>
+
+  <div id="chatSheet" class="modal hidden" role="dialog" aria-labelledby="chatTitle">
+    <h2 id="chatTitle"></h2>
+    <p id="chatSub" class="small"></p>
+    <div id="chatList" class="chat" aria-live="polite"></div>
+    <div class="chat-compose"><input id="chatInput" aria-label="Message" placeholder="Write a message" maxlength="500" autocomplete="off"><button data-action="chat-send">Send</button></div>
+    <div class="form-actions"><button class="cancel" data-action="close-sheet">Close</button></div>
+  </div>
+
+  <div id="textSheet" class="modal hidden" role="dialog" aria-labelledby="textSheetTitle">
+    <h2 id="textSheetTitle"></h2>
+    <label id="textSheetLabel" for="textSheetInput"></label><input id="textSheetInput" maxlength="60">
+    <div class="form-actions"><button class="cancel" data-action="close-sheet">Cancel</button><button class="save" data-action="text-save">Save</button></div>
+  </div>
+
+  <div id="confirmSheet" class="modal hidden" role="dialog" aria-labelledby="confirmTitle">
+    <h2 id="confirmTitle"></h2>
+    <p id="confirmText"></p>
+    <div class="form-actions"><button class="cancel" data-action="close-sheet">Cancel</button><button id="confirmOk" class="save" data-action="confirm-ok">OK</button></div>
+    <button id="confirmAlt" class="delete-btn hidden" data-action="confirm-alt"></button>
+  </div>
+
+  <div id="inviteSheet" class="modal hidden" role="dialog" aria-labelledby="inviteTitle">
+    <h2 id="inviteTitle">Invite code</h2>
+    <p>Whoever you're inviting opens TidyNest, creates their own account, then enters this code on the welcome screen. It works once and expires in 7 days.</p>
+    <div id="inviteCode" class="invite-code"></div>
+    <div class="form-actions"><button class="cancel" data-action="close-sheet">Done</button><button class="save" data-action="share-invite">Copy / share</button></div>
+  </div>
+</div>
+
+<div class="rotate-note" role="status"><div><picture><source srcset="logo-mark-dark.png" media="(prefers-color-scheme: dark)"><img src="logo-mark.png" alt="" width="240" height="202"></picture><b>Turn your phone upright</b><span>TidyNest is laid out for portrait.</span></div></div>
+
+<div id="toast" class="toast" role="status"></div>
+
+<script>
+  // If the app code can't load at all (no connection on first visit), say so instead of sitting on "Loading".
+  // Keep the app at one size: no pinch-to-zoom and no double-tap zoom (scrolling is unaffected).
+  ["gesturestart", "gesturechange", "gestureend"].forEach(function (name) {
+    document.addEventListener(name, function (event) { event.preventDefault(); }, { passive: false });
+  });
+  document.addEventListener("touchmove", function (event) {
+    if (event.touches && event.touches.length > 1) event.preventDefault();
+  }, { passive: false });
+
+  setTimeout(function () {
+    if (!window.__tidynestBooted) {
+      document.getElementById("loadingText").textContent =
+        "TidyNest couldn't load. Check your internet connection, then reload the page.";
+    }
+  }, 9000);
+
+  // Lets the app open offline and show alerts. Registered here so it doesn't depend on Firebase loading.
+  if ("serviceWorker" in navigator) {
+    window.__tidynestSw = navigator.serviceWorker.register("sw.js")
+      .catch(function (error) { console.warn("Service worker not registered", error); return null; });
+  }
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+  import {
+    getAuth, onAuthStateChanged, signInWithEmailAndPassword,
+    createUserWithEmailAndPassword, signOut, updateProfile, sendPasswordResetEmail
+  } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+  import {
+    initializeFirestore, getFirestore, persistentLocalCache, persistentMultipleTabManager,
+    collection, doc, addDoc, setDoc, getDoc, getDocs, updateDoc, deleteDoc,
+    onSnapshot, query, where, limit, serverTimestamp, arrayUnion, Timestamp, writeBatch
+  } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+  const VERSION = "0.56";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAtOSr0yNRMh26de_1OHx4wl7ylUjlqACo",
+    authDomain: "home-sort-76dab.firebaseapp.com",
+    projectId: "home-sort-76dab",
+    storageBucket: "home-sort-76dab.firebasestorage.app",
+    messagingSenderId: "828435391402",
+    appId: "1:828435391402:web:016df3312dfbcc41df41d3",
+    measurementId: "G-7X0ZY97EM5"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // Keep a copy of the data on the device so the app opens and works offline.
+  let db;
+  try {
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+    });
+  } catch (error) {
+    console.warn("Offline storage unavailable, continuing online-only.", error);
+    db = getFirestore(app);
+  }
+
+  window.__tidynestBooted = true;
+
+  const LEGACY_LOCAL_KEY = "homesort-items-v1";
+  const ALERT_WINDOW_MS = 15 * 60 * 1000;
+  const INVITE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+
+  const state = {
+    user: null,
+    pendingName: "",
+    household: null,
+    shared: [],
+    priv: [],
+    items: [],
+    loaded: { shared: false, priv: false },
+    unsubs: [],
+    view: "home",
+    selectedDate: startOfDay(new Date()),
+    calMonth: startOfMonth(new Date()),
+    editingId: null,
+    chatId: null,
+    syncError: "",
+    lastNameSynced: "",
+    inviteCode: "",
+    showDone: false
+  };
+
+  let authMode = "signin";
+  let textSheetSave = null;
+  let confirmAction = null;
+  let confirmAltAction = null;
+  let swRegistration = null;
+  let toastTimer = null;
+
+  const $ = id => document.getElementById(id);
+
+  /* ---------- small helpers ---------- */
+
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[c]));
+  }
+  function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function startOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
+  function addDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+  function pad(n) { return String(n).padStart(2, "0"); }
+  // Day key in the device's own timezone (never UTC).
+  function dayKey(d) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+  function toLocalInput(d) { return `${dayKey(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+  function itemTime(item) {
+    const t = new Date(item.date).getTime();
+    return Number.isFinite(t) ? t : NaN;
+  }
+  // Events and reminders can have an end. Timers, and anything saved without one, end when they start.
+  function itemEnd(item) {
+    const t = itemTime(item);
+    const e = item.type !== "timer" && item.end ? new Date(item.end).getTime() : NaN;
+    return Number.isFinite(e) && e > t ? e : t;
+  }
+  // Every day an item touches: one day for most things, several for an event that runs over a few days.
+  function itemDayKeys(item) {
+    const t = itemTime(item);
+    if (!Number.isFinite(t)) return [];
+    const e = itemEnd(item);
+    const last = startOfDay(new Date(e > t ? e - 1 : e)).getTime();   // ending at midnight doesn't count as the next day
+    const keys = [];
+    for (let d = startOfDay(new Date(t)), n = 0; d.getTime() <= last && n < 370; d = addDays(d, 1), n++) keys.push(dayKey(d));
+    return keys;
+  }
+  /* ---------- repeating events and reminders ---------- */
+
+  // Every date of a repeat is saved as an item of its own, so each one has its own chat and can be changed,
+  // ticked or deleted without touching the others. They're tied together by a shared "seriesId".
+  // The pattern is saved on each as { every: 2, unit: "week" } (plus the day of the month to aim for, for months and years).
+  const REPEAT_UNITS = ["day", "week", "month", "year"];
+  function repeatOf(item) {
+    const r = item && item.type !== "timer" && !item.repeatEnded ? item.repeat : null;
+    const every = Math.floor(Number(r?.every));
+    if (!r || !REPEAT_UNITS.includes(r.unit) || !(every >= 1)) return null;
+    return { every: Math.min(every, 99), unit: r.unit, anchor: Number(r.anchor) || 0 };
+  }
+  function repeatPreset(rule) {
+    if (!rule) return "";
+    if (rule.unit === "week" && rule.every === 1) return "weekly";
+    if (rule.unit === "week" && rule.every === 2) return "fortnightly";
+    if (rule.unit === "month" && rule.every === 1) return "monthly";
+    return "custom";
+  }
+  function repeatText(rule) {
+    if (!rule) return "";
+    if (rule.every === 1) return { day: "Daily", week: "Weekly", month: "Monthly", year: "Yearly" }[rule.unit];
+    if (rule.every === 2 && rule.unit === "week") return "Fortnightly";
+    return `Every ${rule.every} ${rule.unit}s`;
+  }
+  // The k-th repeat after a starting moment (k = 0 is the start itself). Worked out on the calendar in local time,
+  // so 6 pm stays 6 pm, and "the 31st" means the last day in months that are shorter.
+  function stepDate(start, rule, k) {
+    const d = new Date(start);
+    const n = rule.every * k;
+    if (rule.unit === "day") d.setDate(d.getDate() + n);
+    else if (rule.unit === "week") d.setDate(d.getDate() + 7 * n);
+    else {
+      const day = rule.anchor || d.getDate();
+      d.setDate(1);
+      d.setMonth(d.getMonth() + (rule.unit === "year" ? 12 * n : n));
+      d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()));
+    }
+    return d;
+  }
+  // How far ahead a repeat is laid out, in days. Once what's left is less than half of this, the next stretch is added.
+  const SERIES_DAYS = { day: 60, week: 370, month: 760, year: 1830 };
+  function seriesItems(seriesId) { return seriesId ? state.items.filter(i => i.seriesId === seriesId) : []; }
+
+  function nextHour() {
+    const d = new Date(Date.now() + 3600000);
+    d.setMinutes(0, 0, 0);
+    return d;
+  }
+  function dateValue(value) {
+    if (!value) return 0;
+    if (typeof value.toMillis === "function") return value.toMillis();
+    if (value.seconds) return value.seconds * 1000;
+    return new Date(value).getTime() || 0;
+  }
+  function formatDateTime(iso) {
+    const d = new Date(iso);
+    if (!Number.isFinite(d.getTime())) return "No date";
+    return d.toLocaleString([], { weekday:"short", day:"numeric", month:"short", hour:"numeric", minute:"2-digit" });
+  }
+  function formatDay(d) { return d.toLocaleDateString([], { weekday:"short", day:"numeric", month:"short" }); }
+  // "Mon 5 Oct, 9:00 am", or the whole stretch for an event with an end: "… – 10:00 am", "… – Wed 7 Oct, 5:00 pm".
+  function formatWhen(item) {
+    const t = itemTime(item);
+    if (!Number.isFinite(t)) return item.type === "reminder" ? "No set date" : "No date";
+    const e = itemEnd(item);
+    const start = new Date(t), end = new Date(e);
+    const sameDay = dayKey(start) === dayKey(end);
+    // an all-day event, or a reminder for a day with no particular time
+    if (item.allDay && item.type !== "timer") return !sameDay ? `${formatDay(start)} – ${formatDay(end)}` : item.type === "calendar" ? `${formatDay(start)}, all day` : formatDay(start);
+    if (e <= t) return formatDateTime(item.date);
+    return `${formatDateTime(item.date)} – ${sameDay ? formatTime(item.end) : formatDateTime(item.end)}`;
+  }
+  // The same, for a row: a long stretch may wrap after the dash, never in the middle of a date or time.
+  function whenHtml(item) {
+    return escapeHtml(formatWhen(item)).split(" – ").map((part, i, all) => `<span class="nw">${part}${i < all.length - 1 ? " –" : ""}</span>`).join(" ");
+  }
+  function formatTime(iso) {
+    const d = new Date(iso);
+    if (!Number.isFinite(d.getTime())) return "";
+    return d.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" });
+  }
+  const ICONS = {
+    calendar: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="M7.5 13.3h9M7.5 16.9h5.5"/></svg>',
+    timer: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V9.8M10 3.2h4M12 3.2v3.3M17.6 7.4l1.3-1.3"/></svg>',
+    check: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.6 4.6 4.6L19 7.6" stroke-width="2.6"/></svg>',
+    thumb: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10.5v9.5H4.5a1 1 0 0 1-1-1v-7.5a1 1 0 0 1 1-1z"/><path d="M7 10.5l3.6-6.3a1.9 1.9 0 0 1 3.5 1.3L13.4 9h4.8a2 2 0 0 1 2 2.4L19 18.3a2 2 0 0 1-2 1.7H7"/></svg>',
+    pin: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>',
+    repeat: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3.5 20.5 7 17 10.5"/><path d="M3.5 11.5V10a3 3 0 0 1 3-3h14"/><path d="M7 20.5 3.5 17 7 13.5"/><path d="M20.5 12.5V14a3 3 0 0 1-3 3h-14"/></svg>',
+    chat: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-7.2L7.5 21v-3.5H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M8 9.8h8M8 13h5"/></svg>',
+    reminder: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 6.5 1.6 1.6L8.4 5"/><path d="M11.5 6.6H20"/><path d="m4 12.5 1.6 1.6 2.8-3.1"/><path d="M11.5 12.6H20"/><rect x="4.2" y="16.8" width="3.6" height="3.6" rx=".8"/><path d="M11.5 18.6H20"/></svg>'
+  };
+  function typeIcon(type) { return ICONS[type] || ICONS.reminder; }
+  function typeName(type) { return type === "calendar" ? "Event" : type === "timer" ? "Timer" : "Reminder"; }
+
+  function toast(message) {
+    const el = $("toast");
+    el.textContent = message;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), 3200);
+  }
+
+  function friendlyDbError(error) {
+    const code = error?.code || "";
+    if (code === "permission-denied") {
+      return "Firebase blocked that. If TidyNest has only just been set up, the security rules (firestore.rules) still need to be published in Firebase → Firestore Database → Rules.";
+    }
+    if (code === "unavailable") return "Can't reach Firebase right now. Check your internet connection.";
+    return error?.message || "Something went wrong.";
+  }
+
+  /* ---------- screens ---------- */
+
+  function showScreen(name) {
+    for (const s of ["loading", "auth", "setup", "app"]) {
+      $(s + "Screen").classList.toggle("hidden", s !== name);
+    }
+  }
+
+  /* ---------- each person's colour ---------- */
+
+  // Shown in Settings in this order (two rows of eight on a phone).
+  const COLORS = ["red", "coral", "orange", "gold", "lime", "green", "teal", "aqua", "blue", "navy", "purple", "magenta", "pink", "brown", "slate", "graphite"];
+  const COLOR_NAMES = { red: "Red", coral: "Coral", orange: "Orange", gold: "Gold", lime: "Lime", green: "Green", teal: "Teal", aqua: "Aqua", blue: "Blue", navy: "Navy", purple: "Purple", magenta: "Magenta", pink: "Pink", brown: "Brown", slate: "Slate", graphite: "Graphite" };
+  // Handed out, in this order, to people who haven't picked one yet.
+  const DEFAULT_COLORS = ["blue", "pink", "teal", "orange", "purple", "green", "gold", "slate"];
+
+  // Everyone gets a colour: the one they picked in Settings, otherwise the first one nobody else has.
+  function colorMap() {
+    const h = state.household;
+    const map = {};
+    if (!h) return map;
+    const chosen = h.memberColors || {};
+    const taken = new Set();
+    for (const m of h.members) {
+      if (COLORS.includes(chosen[m]) && !taken.has(chosen[m])) { map[m] = chosen[m]; taken.add(chosen[m]); }
+    }
+    for (const m of h.members) {
+      if (map[m]) continue;
+      const free = DEFAULT_COLORS.find(c => !taken.has(c)) || COLORS.find(c => !taken.has(c)) || "slate";
+      map[m] = free; taken.add(free);
+    }
+    return map;
+  }
+  function colorOf(uid) { return state.colors?.[uid] ? `var(--c-${state.colors[uid]})` : "var(--muted)"; }
+  // Equal stripes of each colour, left to right (or of each colour's pale tint, for backgrounds).
+  function stripes(colours, tint) {
+    const n = colours.length;
+    return `linear-gradient(90deg, ${colours.map((c, i) => `${tint ? `color-mix(in srgb, ${c} 26%, var(--card))` : c} ${Math.round(i * 100 / n)}% ${Math.round((i + 1) * 100 / n)}%`).join(", ")})`;
+  }
+  // Takes one person or a list. With a list, the extra variables carry everyone's colours.
+  function whoStyle(uids) {
+    const colours = [].concat(uids).map(colorOf);
+    return `style="--who:${colours[0]}${colours.length > 1 ? `;--who-grad:${stripes(colours)};--who-tint:${stripes(colours, true)}` : ""}"`;
+  }
+  function whoDots(uids) { return [].concat(uids).map(u => `<i class="who-dot" style="background:${colorOf(u)}"></i>`).join(""); }
+  function joinNames(names) { return names.length < 2 ? (names[0] || "") : `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`; }
+
+  function pickColour(colour) {
+    const uid = state.user.uid;
+    if (!COLORS.includes(colour) || state.colors[uid] === colour) return;
+    if (Object.entries(state.colors).some(([m, c]) => m !== uid && c === colour)) return;
+    state.household.memberColors = { ...(state.household.memberColors || {}), [uid]: colour };
+    render();
+    updateDoc(householdRef(), { [`memberColors.${uid}`]: colour }).catch(writeFailed);
+  }
+
+  /* ---------- names ---------- */
+
+  function myName() {
+    const u = state.user;
+    if (!u) return "";
+    return (state.pendingName || u.displayName || (u.email || "").split("@")[0] || "Me").trim();
+  }
+  function nameOf(uid, fallback) {
+    if (state.user && uid === state.user.uid) return "you";
+    return state.household?.memberNames?.[uid] || fallback || "someone else";
+  }
+  function othersLabel() {
+    const h = state.household;
+    if (!h || !state.user) return "your household";
+    const names = (h.members || [])
+      .filter(m => m !== state.user.uid)
+      .map(m => h.memberNames?.[m])
+      .filter(Boolean);
+    return names.length ? names.join(" & ") : "your household";
+  }
+  // Who an item is for: whoever it was assigned to (one person or several), otherwise whoever added it.
+  // Their colours mark it. Always in household order, so it looks the same on everyone's phone.
+  function ownersOf(item) {
+    const members = state.household?.members || [];
+    const picked = [].concat(item.assignedTo || []);
+    const owners = members.filter(m => picked.includes(m));
+    return owners.length ? owners : [item.createdBy];
+  }
+  function shareLabel(item) {
+    const me = state.user.uid;
+    const owners = ownersOf(item);
+    const dot = whoDots(owners);
+    if (owners.length > 1 || owners[0] !== item.createdBy) {
+      const names = [...owners].sort((a, b) => (b === me) - (a === me)).map(u => nameOf(u));   // "you" comes first
+      const adder = item.createdBy !== me ? `, added by ${nameOf(item.createdBy, item.createdByName || (item.createdByEmail || "").split("@")[0])}`
+        : owners.includes(me) ? "" : ", added by you";
+      return dot + escapeHtml(`For ${joinNames(names)}${adder}`);
+    }
+    if (!item.shared) return dot + "Private";
+    if (item.createdBy === state.user.uid) return dot + `Shared with ${escapeHtml(othersLabel())}`;
+    return dot + `Added by ${escapeHtml(nameOf(item.createdBy, item.createdByName || (item.createdByEmail || "").split("@")[0]))}`;
+  }
+
+  /* ---------- sign in / sign up ---------- */
+
+  function setAuthMode(mode) {
+    authMode = mode;
+    const signup = mode === "signup";
+    $("authButton").textContent = signup ? "Create account" : "Sign in";
+    $("authToggle").textContent = signup ? "I already have an account" : "Create an account";
+    $("authSubtitle").textContent = signup
+      ? "Create your TidyNest account. You'll set up or join a household next."
+      : "Sign in to keep your household calendar, reminders and timers synced between devices.";
+    $("authNameWrap").classList.toggle("hidden", !signup);
+    $("authReset").classList.toggle("hidden", signup);
+    $("authPassword").autocomplete = signup ? "new-password" : "current-password";
+    clearAuthError();
+  }
+
+  function readableAuthError(error) {
+    const map = {
+      "auth/invalid-credential":"Email or password is incorrect.",
+      "auth/wrong-password":"Email or password is incorrect.",
+      "auth/user-not-found":"Email or password is incorrect.",
+      "auth/invalid-email":"That email address isn't valid.",
+      "auth/missing-password":"Please enter your password.",
+      "auth/email-already-in-use":"An account already exists for that email. Try signing in instead.",
+      "auth/weak-password":"That password is too weak. Use at least 6 characters.",
+      "auth/too-many-requests":"Too many attempts. Please wait a little and try again.",
+      "auth/network-request-failed":"Network error. Check your internet connection.",
+      "auth/operation-not-allowed":"Email and password sign-in isn't switched on in Firebase → Authentication → Sign-in method."
+    };
+    return map[error?.code || ""] || error?.message || "Something went wrong.";
+  }
+  function showAuthError(message, info = false) {
+    const el = $("authError");
+    el.textContent = message;
+    el.classList.toggle("info", info);
+    el.style.display = "block";
+  }
+  function clearAuthError() {
+    $("authError").textContent = "";
+    $("authError").style.display = "none";
+  }
+
+  $("authForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    const email = $("authEmail").value.trim();
+    const password = $("authPassword").value;
+    const name = $("authName").value.trim();
+    if (!email || !password) return showAuthError("Please enter your email and password.");
+    if (authMode === "signup" && !name) return showAuthError("Please enter your name so your household knows who added what.");
+    if (authMode === "signup" && password.length < 6) return showAuthError("Use a password of at least 6 characters.");
+
+    $("authButton").disabled = true;
+    try {
+      if (authMode === "signin") {
+        await signInWithEmailAndPassword(auth, email, password);
+      } else {
+        state.pendingName = name;
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        try { await updateProfile(cred.user, { displayName: name }); } catch (e) { console.warn(e); }
+      }
+      clearAuthError();
+      $("authPassword").value = "";
+    } catch (error) {
+      state.pendingName = "";
+      showAuthError(readableAuthError(error));
+    } finally {
+      $("authButton").disabled = false;
+    }
+  });
+
+  async function sendReset() {
+    const email = $("authEmail").value.trim();
+    if (!email) return showAuthError("Type your email address above first, then tap Forgot password.");
+    try {
+      await sendPasswordResetEmail(auth, email);
+      showAuthError("If there's an account for that email, a password reset link is on its way.", true);
+    } catch (error) {
+      showAuthError(readableAuthError(error));
+    }
+  }
+
+  onAuthStateChanged(auth, async user => {
+    stopListening();
+    state.user = user || null;
+    state.household = null;
+    if (!user) {
+      state.pendingName = "";
+      closeSheets();
+      setAuthMode("signin");
+      showScreen("auth");
+      return;
+    }
+    showScreen("loading");
+    await findHousehold();
+  });
+
+  /* ---------- households ---------- */
+
+  function showSetup(message = "") {
+    $("setupEmail").textContent = state.user?.email || "";
+    setSetupError(message);
+    showScreen("setup");
+  }
+  function setSetupError(message) {
+    const el = $("setupError");
+    el.textContent = message;
+    el.style.display = message ? "block" : "none";
+  }
+
+  async function findHousehold() {
+    const uid = state.user.uid;
+    try {
+      const snap = await getDocs(query(
+        collection(db, "households"),
+        where("members", "array-contains", uid),
+        limit(5)
+      ));
+      if (state.user?.uid !== uid) return;
+      if (snap.empty) return showSetup();
+      let preferred = "";
+      try { preferred = localStorage.getItem("tidynest-household") || ""; } catch {}
+      const chosen = snap.docs.find(d => d.id === preferred) || snap.docs[0];
+      enterHousehold(chosen.id, chosen.data());
+    } catch (error) {
+      console.error(error);
+      showSetup(friendlyDbError(error));
+    }
+  }
+
+  async function createHousehold() {
+    const name = $("householdName").value.trim() || "Home";
+    const uid = state.user.uid;
+    $("createButton").disabled = true;
+    setSetupError("");
+    try {
+      const data = {
+        name,
+        members: [uid],
+        memberNames: { [uid]: myName() },
+        createdBy: uid,
+        createdAt: serverTimestamp()
+      };
+      const ref = await addDoc(collection(db, "households"), data);
+      enterHousehold(ref.id, data);
+    } catch (error) {
+      console.error(error);
+      setSetupError(friendlyDbError(error));
+    } finally {
+      $("createButton").disabled = false;
+    }
+  }
+
+  async function joinHousehold() {
+    const code = $("joinCode").value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const uid = state.user.uid;
+    if (code.length < 8) return setSetupError("Enter the 8-character invite code you were given.");
+    $("joinButton").disabled = true;
+    setSetupError("");
+    try {
+      const inviteRef = doc(db, "invites", code);
+      const invite = await getDoc(inviteRef);
+      if (!invite.exists()) {
+        return setSetupError("That code wasn't found. Check it, or ask for a new one — codes only work once.");
+      }
+      const info = invite.data();
+      if (dateValue(info.expiresAt) < Date.now()) {
+        return setSetupError("That code has expired. Ask for a new one.");
+      }
+      await updateDoc(doc(db, "households", info.householdId), {
+        members: arrayUnion(uid),
+        [`memberNames.${uid}`]: myName(),
+        joinedWith: code
+      });
+      deleteDoc(inviteRef).catch(e => console.warn(e));
+      $("joinCode").value = "";
+      enterHousehold(info.householdId);
+    } catch (error) {
+      console.error(error);
+      setSetupError(error?.code === "permission-denied"
+        ? "That code couldn't be used. It may have expired — ask for a new one."
+        : friendlyDbError(error));
+    } finally {
+      $("joinButton").disabled = false;
+    }
+  }
+
+  function stopListening() {
+    for (const stop of state.unsubs) { try { stop(); } catch {} }
+    state.unsubs = [];
+    state.shared = [];
+    state.priv = [];
+    state.items = [];
+    state.loaded = { shared: false, priv: false };
+    state.syncError = "";
+    state.lastNameSynced = "";
+  }
+
+  function toItem(d) {
+    return { id: d.id, ...d.data({ serverTimestamps: "estimate" }) };
+  }
+
+  function enterHousehold(hid, known) {
+    stopListening();
+    const uid = state.user.uid;
+    try { localStorage.setItem("tidynest-household", hid); } catch {}
+    state.household = {
+      id: hid,
+      name: known?.name || "Home",
+      members: known?.members || [uid],
+      memberNames: known?.memberNames || {},
+      memberColors: known?.memberColors || {}
+    };
+
+    state.unsubs.push(onSnapshot(doc(db, "households", hid), snap => {
+      if (!snap.exists()) return;
+      const d = snap.data();
+      state.household = {
+        id: hid,
+        name: d.name || "Home",
+        members: Array.isArray(d.members) ? d.members : [],
+        memberNames: d.memberNames || {},
+        memberColors: d.memberColors || {}
+      };
+      syncMyName();
+      render();
+    }, onSyncError));
+
+    const itemsRef = collection(db, "households", hid, "items");
+    // Two listeners: everything shared with the household, plus this person's own private items.
+    state.unsubs.push(onSnapshot(query(itemsRef, where("shared", "==", true)), snap => {
+      state.shared = snap.docs.map(toItem);
+      state.loaded.shared = true;
+      itemsChanged();
+    }, onSyncError));
+    state.unsubs.push(onSnapshot(query(itemsRef, where("createdBy", "==", uid), where("shared", "==", false)), snap => {
+      state.priv = snap.docs.map(toItem);
+      state.loaded.priv = true;
+      itemsChanged();
+    }, onSyncError));
+
+    showView("home");
+    showScreen("app");
+    render();
+  }
+
+  function onSyncError(error) {
+    console.error(error);
+    state.syncError = friendlyDbError(error);
+    renderSync();
+  }
+
+  function itemsChanged() {
+    state.syncError = "";
+    state.items = [...state.shared, ...state.priv];
+    render();
+    if (state.editingId && !findItem(state.editingId)) closeSheets();
+    if (state.chatId) {
+      if (findItem(state.chatId)) renderChatThread();
+      else closeSheets();
+    }
+    checkDue();
+    tidyUp();
+    rememberItems();
+    extendSeries();
+  }
+
+  // Make sure the household knows this person's display name.
+  function syncMyName() {
+    const h = state.household;
+    const uid = state.user?.uid;
+    const name = myName();
+    if (!h || !uid || !name || !h.members.includes(uid)) return;
+    if (h.memberNames[uid] === name || state.lastNameSynced === name) return;
+    state.lastNameSynced = name;
+    updateDoc(doc(db, "households", h.id), { [`memberNames.${uid}`]: name }).catch(e => console.warn(e));
+  }
+
+  function householdRef() { return doc(db, "households", state.household.id); }
+  function itemsRef() { return collection(db, "households", state.household.id, "items"); }
+  function itemRef(id) { return doc(db, "households", state.household.id, "items", id); }
+
+  function writeFailed(error) {
+    console.error(error);
+    toast(error?.code === "permission-denied"
+      ? "Firebase didn't allow that change."
+      : "That change couldn't be saved. " + (error?.message || ""));
+  }
+
+  /* ---------- items ---------- */
+
+  function findItem(id) { return state.items.find(i => i.id === id); }
+
+  /* ---------- location: address lookup and directions ---------- */
+
+  // Addresses are looked up as you type with Photon, a free search over OpenStreetMap's map data (no account or key).
+  // What's typed in the Location box is sent to it; nothing else is. If it can't be reached the box still works as plain text.
+  const PLACE_SEARCH = "https://photon.komoot.io/api/";
+  const SEARCH_NEAR = { lat: -26.65, lon: 153.07 };   // matches close to the Sunshine Coast are listed first
+  const STATE_SHORT = { "Queensland": "QLD", "New South Wales": "NSW", "Victoria": "VIC", "South Australia": "SA", "Western Australia": "WA", "Tasmania": "TAS", "Northern Territory": "NT", "Australian Capital Territory": "ACT" };
+  let placeTimer = null, placeAbort = null, placeSeq = 0;
+
+  // Tapping a location opens Apple Maps with directions to it.
+  function mapsUrl(place) { return "https://maps.apple.com/?daddr=" + encodeURIComponent(place); }
+  function placeHtml(item) {
+    const place = item.type === "timer" ? "" : String(item.location || "").trim();
+    if (!place) return "";
+    return `<a class="place" href="${escapeHtml(mapsUrl(place))}" target="_blank" rel="noopener" aria-label="Directions to ${escapeHtml(place)}">${ICONS.pin}<span>${escapeHtml(place)}</span></a>`;
+  }
+
+  async function placeLookup(q, signal) {
+    const url = `${PLACE_SEARCH}?q=${encodeURIComponent(q)}&limit=6&lang=en&lat=${SEARCH_NEAR.lat}&lon=${SEARCH_NEAR.lon}`;
+    const res = await fetch(url, { signal });
+    if (!res.ok) throw new Error("Address search answered " + res.status);
+    return ((await res.json()).features || []).map(f => f.properties || {});
+  }
+  // One search result as a line of address: "Sunshine Plaza, Horton Parade, Maroochydore QLD 4558".
+  function placeFrom(p, typed) {
+    const isStreet = p.osm_key === "highway";
+    const street = p.street || (isStreet ? p.name : "") || "";
+    let number = p.housenumber || "";
+    if (!number && isStreet) {   // the map knows the street but not the house: keep the number that was typed
+      const m = typed.match(/^\s*(\d+[a-z]?(?:\/\d+[a-z]?)?)\s+\S/i);
+      if (m) number = m[1];
+    }
+    const line = [number, street].filter(Boolean).join(" ");
+    const name = !isStreet && p.name && p.name !== street ? p.name : "";
+    const suburb = [p.district, p.city, p.locality, p.county].find(x => x && x !== name) || "";
+    const region = [suburb, STATE_SHORT[p.state] || p.state, p.postcode].filter(Boolean).join(" ")
+      + (p.countrycode && p.countrycode !== "AU" && p.country ? ", " + p.country : "");
+    const parts = [name, line, region].filter(Boolean);
+    if (!parts.length) return null;
+    return { main: parts[0], sub: parts.slice(1).join(", "), text: parts.join(", ") };
+  }
+  function cancelPlaceSearch() {
+    clearTimeout(placeTimer);
+    placeSeq++;
+    if (placeAbort) placeAbort.abort();
+  }
+  function hidePlaces() {
+    cancelPlaceSearch();
+    $("placeList").classList.add("hidden");
+    $("placeList").innerHTML = "";
+  }
+  // The list on screen stays put while the next search is on its way, so it doesn't flicker with every letter.
+  function placeTyped() {
+    const q = $("itemPlace").value.trim();
+    cancelPlaceSearch();
+    if (q.length < 3) return hidePlaces();
+    placeTimer = setTimeout(() => findPlaces(q), 300);   // wait for a pause in the typing
+  }
+  async function findPlaces(q) {
+    const seq = ++placeSeq;
+    placeAbort = typeof AbortController === "function" ? new AbortController() : null;
+    let found = [];
+    try {
+      found = (await placeLookup(q, placeAbort?.signal)).map(p => placeFrom(p, q)).filter(Boolean);
+    } catch (error) {
+      if (error?.name !== "AbortError") console.warn("Address search unavailable", error);
+    }
+    if (seq !== placeSeq || $("itemPlace").value.trim() !== q) return;   // they've typed more since
+    const seen = new Set();
+    found = found.filter(f => !seen.has(f.text) && seen.add(f.text));
+    $("placeList").classList.toggle("hidden", !found.length);
+    $("placeList").innerHTML = !found.length ? "" : found.map(f =>
+      `<button type="button" data-action="pick-place" data-place="${escapeHtml(f.text)}"><b>${escapeHtml(f.main)}</b>${f.sub ? `<span>${escapeHtml(f.sub)}</span>` : ""}</button>`).join("")
+      + '<div class="credit">Addresses from OpenStreetMap</div>';
+  }
+
+  /* ---------- memory: suggestions from things added before ---------- */
+
+  // Every title this person has seen is remembered on this device (with its type, location and who it was for),
+  // so it can be offered again while typing a new one, even after the original has been ticked off and tidied away.
+  const MEMO_MAX = 400;
+  let memo = null, memoOwner = "";
+  function memoStoreKey() { return "tidynest-memory-" + (state.user?.uid || ""); }
+  function loadMemo() {
+    const uid = state.user?.uid || "";
+    if (!memo || memoOwner !== uid) {
+      memoOwner = uid;
+      try { memo = JSON.parse(localStorage.getItem(memoStoreKey()) || "{}") || {}; } catch { memo = {}; }
+      if (typeof memo !== "object" || Array.isArray(memo)) memo = {};
+    }
+    return memo;
+  }
+  function saveMemo() { try { localStorage.setItem(memoStoreKey(), JSON.stringify(memo)); } catch {} }
+  function rememberItems() {
+    if (!state.user || !state.loaded.shared || !state.loaded.priv) return;
+    const bank = loadMemo();
+    const before = JSON.stringify(bank);
+    for (const item of state.items) {
+      const title = String(item.title || "").trim();
+      if (!title) continue;
+      const key = title.toLowerCase();
+      const when = dateValue(item.createdAt) || itemTime(item) || 0;
+      const had = bank[key];
+      if (had && had.last > when) continue;   // keep the details of the most recent one with this title
+      bank[key] = { title, type: item.type, mode: item.type === "timer" ? timerMode(item) : "", location: item.type === "timer" ? "" : String(item.location || ""), who: ownersOf(item), last: when };
+      // one that was removed from the suggestions stays removed until it's added again
+      if (had?.hidden && had.hidden >= when) bank[key].hidden = had.hidden;
+    }
+    const keys = Object.keys(bank);
+    if (keys.length > MEMO_MAX) keys.sort((a, b) => bank[a].last - bank[b].last).slice(0, keys.length - MEMO_MAX).forEach(k => delete bank[k]);
+    if (JSON.stringify(bank) !== before) saveMemo();
+  }
+  // Titles that contain every word typed. Ones that start with it come first, then this type, then the most recent.
+  function memoMatches(typed) {
+    const q = typed.trim().toLowerCase();
+    if (q.length < 2) return [];
+    const words = q.split(/\s+/);
+    const found = [];
+    for (const [key, entry] of Object.entries(loadMemo())) {
+      if (entry.hidden || entry.title === typed.trim() || !words.every(w => key.includes(w))) continue;
+      const rank = key.startsWith(q) ? 0 : words.every(w => (" " + key).includes(" " + w)) ? 1 : 2;
+      found.push({ key, entry, rank });
+    }
+    return found.sort((a, b) => a.rank - b.rank || (a.entry.type === form.type ? 0 : 1) - (b.entry.type === form.type ? 0 : 1) || b.entry.last - a.entry.last).slice(0, 5);
+  }
+  function hideMemo() {
+    $("memoList").classList.add("hidden");
+    $("memoList").innerHTML = "";
+  }
+  function titleTyped() {
+    const found = form.editing ? [] : memoMatches($("itemTitle").value);
+    if (!found.length) return hideMemo();
+    $("memoList").innerHTML = found.map(({ key, entry }) => {
+      const sub = [typeName(entry.type), entry.location].filter(Boolean).join(" · ");
+      return `<div class="memo-row"><button type="button" class="memo-pick" data-action="pick-memo" data-key="${escapeHtml(key)}">${typeIcon(entry.type)}<span><b>${escapeHtml(entry.title)}</b><small>${escapeHtml(sub)}</small></span></button>` +
+        `<button type="button" class="memo-forget" data-action="forget-memo" data-key="${escapeHtml(key)}" aria-label="Stop suggesting ${escapeHtml(entry.title)}" title="Stop suggesting this">×</button></div>`;
+    }).join("");
+    $("memoList").classList.remove("hidden");
+  }
+  // Picking a suggestion fills in the title and brings its type, location and who it was for.
+  // Anything already chosen on this sheet is left alone, and the date and time are never touched.
+  function pickMemo(key) {
+    const entry = loadMemo()[key];
+    if (!entry) return;
+    $("itemTitle").value = entry.title;
+    hideMemo();
+    if (!form.typeTouched && ["reminder", "calendar", "timer"].includes(entry.type) && entry.type !== form.type) {
+      if (entry.type === "timer") form.mode = entry.mode === "up" ? "upnow" : "down";
+      pickType(entry.type);
+    }
+    if (form.type !== "timer" && entry.location && !$("itemPlace").value.trim()) $("itemPlace").value = entry.location;
+    if (!form.whoTouched && Array.isArray(entry.who)) {
+      const who = (state.household.members || []).filter(m => entry.who.includes(m));
+      if (who.length) form.who = who;
+    }
+    updateForm();
+  }
+  function forgetMemo(key) {
+    const entry = loadMemo()[key];
+    if (!entry) return;
+    entry.hidden = Date.now();
+    saveMemo();
+    titleTyped();
+  }
+
+  // What's picked with the buttons on the add / edit sheet (the typed fields hold their own values).
+  const form = { type: "reminder", mode: "down", who: [], shared: true, creator: "", mine: true, editing: false, lastStart: NaN, endSet: false, typeTouched: false, whoTouched: false, repeat: null, repeatCustom: false, seriesId: "", seriesText: "", hasDate: true, hasTime: true, hasEnd: false, dateGiven: false, dateTouched: false };
+
+  // same order as the Calendar, Reminders and Timers tabs along the bottom
+  $("typePicker").innerHTML = [["calendar", "Event"], ["reminder", "Reminder"], ["timer", "Timer"]]
+    .map(([type, label]) => `<button type="button" data-action="pick-type" data-type="${type}">${ICONS[type]}${label}</button>`).join("");
+  document.querySelector("#repeatPicker .repeat-ic").innerHTML = ICONS.repeat;
+  $("repeatEvery").innerHTML = Array.from({ length: 30 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("");
+  $("repeatUnit").innerHTML = REPEAT_UNITS.map(u => `<option value="${u}">${u}s</option>`).join("");
+
+  // The time picker: an hour list, a minutes list in steps of five, and an am/pm button.
+  const MINUTE_STEP = 5;
+  for (const id of ["itemTime", "itemEndTime"]) {
+    $(id + "H").innerHTML = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(h => `<option value="${h}">${h}</option>`).join("");
+  }
+  // Show a 24-hour "HH:MM" in the picker. A saved time that isn't on a five-minute mark keeps its own minute as an extra choice.
+  function showTime(id, hhmm) {
+    const [h, m] = hhmm.split(":").map(Number);
+    const minutes = [];
+    for (let i = 0; i < 60; i += MINUTE_STEP) minutes.push(i);
+    if (!minutes.includes(m)) { minutes.push(m); minutes.sort((a, b) => a - b); }
+    $(id + "H").value = String(h % 12 || 12);
+    $(id + "M").innerHTML = minutes.map(i => `<option value="${pad(i)}">${pad(i)}</option>`).join("");
+    $(id + "M").value = pad(m);
+    $(id + "P").textContent = h >= 12 ? "pm" : "am";
+  }
+  function pickedTime(id) {
+    const h = Number($(id + "H").value) % 12 + ($(id + "P").textContent === "pm" ? 12 : 0);
+    return `${pad(h)}:${$(id + "M").value}`;
+  }
+  function setWhen(dateId, timeId, d) {
+    $(dateId).value = dayKey(d);
+    showTime(timeId, `${pad(d.getHours())}:${pad(d.getMinutes())}`);
+  }
+  // The date and time fields as one moment. `time` overrides the time field (all-day events run 00:00 to 23:59).
+  function readWhen(dateId, timeId, time) {
+    const day = $(dateId).value, clock = time || pickedTime(timeId);
+    if (!day || !clock) return null;
+    const d = new Date(`${day}T${clock}`);
+    return Number.isFinite(d.getTime()) ? d : null;
+  }
+  // No clock time: an all-day event, or a reminder that has a date but its Time switched off.
+  function isAllDay() {
+    return form.type === "calendar" ? $("itemAllDay").checked : form.type === "reminder" && form.hasDate && !form.hasTime;
+  }
+
+  function openItem(id, defaults = {}) {
+    const item = id ? findItem(id) : null;
+    if (id && !item) return;
+    state.editingId = item ? item.id : null;
+    const me = state.user.uid;
+
+    form.editing = !!item;
+    form.creator = item ? item.createdBy : me;
+    form.mine = form.creator === me;
+    form.type = item?.type || defaults.type || "reminder";
+    form.mode = item && item.type === "timer" ? timerMode(item) : (defaults.mode || "down");
+    form.who = item ? ownersOf(item) : [me];
+    form.shared = item ? !!item.shared : true;
+    form.typeTouched = form.whoTouched = false;
+    // one of a repeat's dates is edited on its own, so the repeat buttons are only for something that doesn't repeat yet
+    form.seriesId = item?.seriesId || "";
+    form.seriesText = form.seriesId ? repeatText(repeatOf(item)) : "";
+    form.repeat = item && !form.seriesId ? repeatOf(item) : null;
+    form.repeatCustom = repeatPreset(form.repeat) === "custom";
+    hideMemo();
+
+    $("itemTitle").value = item?.title || "";
+    const start = item && Number.isFinite(itemTime(item)) ? new Date(itemTime(item)) : (defaults.date || nextHour());
+    // an end that was saved, or chosen on this sheet, is kept; otherwise it follows the type (see defaultEnd)
+    form.endSet = !!item && itemEnd(item) > start.getTime();
+    const end = form.endSet ? new Date(itemEnd(item)) : defaultEnd(start);
+    $("itemAllDay").checked = !!(item && item.type === "calendar" && item.allDay);
+    // a reminder's three switches: does it have a date, a time, an end?
+    // A new reminder starts with both off, to be switched on if it needs them (unless it was opened on a calendar day).
+    form.dateGiven = !!defaults.date;
+    form.dateTouched = false;
+    form.hasDate = item ? item.type !== "reminder" || Number.isFinite(itemTime(item)) : form.dateGiven;
+    form.hasTime = item ? !item.allDay : false;
+    form.hasEnd = form.endSet;
+    setWhen("itemDate", "itemTime", start);
+    setWhen("itemEndDate", "itemEndTime", end);
+    form.lastStart = readWhen("itemDate", "itemTime")?.getTime() ?? NaN;
+    $("itemNotes").value = item?.notes || "";
+    $("itemPlace").value = item?.location || "";
+    hidePlaces();
+    $("itemSave").textContent = item ? "Save" : "Add";
+    $("itemExtras").classList.toggle("hidden", !item);
+    setItemError("");
+    updateForm();
+    openSheet("itemSheet");
+    $("itemSheet").scrollTop = 0;
+    fitNotes();
+    if (!item) setTimeout(() => $("itemTitle").focus(), 60);
+  }
+
+  // Until an end is chosen: events run for an hour, reminders end when they start (so they show a single time).
+  function defaultEnd(start) { return new Date(start.getTime() + (form.type === "calendar" ? 3600000 : 0)); }
+  function pickType(type) {
+    const from = form.type;
+    // carry "no time" and "has an end" across when switching between an event and a reminder
+    if (type === "reminder" && from !== "reminder") {
+      const timed = !(from === "calendar" && $("itemAllDay").checked);
+      // something already saved keeps its date; a new one only keeps a date that was actually chosen
+      form.hasDate = form.editing || form.dateTouched || form.dateGiven;
+      form.hasTime = form.hasDate && timed && (form.editing || form.dateTouched);
+      form.hasEnd = form.hasDate && form.endSet;
+    }
+    if (type === "calendar" && from === "reminder") $("itemAllDay").checked = form.hasDate && !form.hasTime;
+    form.type = type;
+    const start = readWhen("itemDate", "itemTime");
+    if (!form.endSet && start) setWhen("itemEndDate", "itemEndTime", defaultEnd(start));
+    updateForm();
+  }
+
+  // The notes box starts one line high and grows with what's typed.
+  function fitNotes() {
+    const box = $("itemNotes");
+    box.style.height = "";
+    if (box.value) box.style.height = Math.min(box.scrollHeight + 2, 150) + "px";
+  }
+  // The repeat buttons: tapping the one that's lit switches repeating off again.
+  function pickRepeat(kind) {
+    const lit = form.repeatCustom ? "custom" : repeatPreset(form.repeat);
+    if (kind === lit) { form.repeat = null; form.repeatCustom = false; }
+    else if (kind === "custom") { form.repeatCustom = true; form.repeat = form.repeat || { every: 1, unit: "day" }; }
+    else {
+      form.repeatCustom = false;
+      form.repeat = kind === "monthly" ? { every: 1, unit: "month" } : { every: kind === "fortnightly" ? 2 : 1, unit: "week" };
+    }
+    updateForm();
+  }
+
+  function press(boxId, key, value) {
+    for (const b of $(boxId).children) {
+      const on = b.dataset[key] === value;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-pressed", on);
+    }
+  }
+
+  // Redraw the sheet to match what's picked: which fields show, how they're worded, who it's for and who can see it.
+  function updateForm() {
+    const isEvent = form.type === "calendar", isTimer = form.type === "timer";
+    const allDay = isAllDay();
+    const kind = isEvent ? "event" : isTimer ? "timer" : "reminder";
+    $("itemSheetTitle").textContent = (form.editing ? "Edit " : "New ") + kind;
+    $("itemTitle").placeholder = isEvent ? "What's happening?" : isTimer ? "What are you timing?" : "What do you need to remember?";
+    press("typePicker", "type", form.type);
+    // Events and timers get a capital on every word of the title; reminders are typed like a normal sentence.
+    const caps = form.type === "reminder" ? "sentences" : "words";
+    if ($("itemTitle").getAttribute("autocapitalize") !== caps) {
+      $("itemTitle").setAttribute("autocapitalize", caps);
+      // a keyboard that's already up only picks the change up when the box is focused afresh
+      if (document.activeElement === $("itemTitle")) { $("itemTitle").blur(); $("itemTitle").focus(); }
+    }
+
+    $("timerModeWrap").classList.toggle("hidden", !isTimer);
+    // two choices, count down or count up; counting up then asks "from now" or "from a time"
+    const countingUp = form.mode !== "down";
+    press("modePicker", "mode", countingUp ? "count-up" : "down");
+    $("upPicker").classList.toggle("hidden", !countingUp);
+    $("upPicker").children[0].textContent = form.editing ? "Restart from now" : "From now";
+    press("upPicker", "mode", form.mode);
+
+    // A reminder can have no date at all, a date with no time, or both, and an end only if it's switched on.
+    const isRem = form.type === "reminder";
+    const noDate = isRem && !form.hasDate;
+    const showEnd = isEvent || (isRem && !noDate && form.hasEnd);
+    $("allDayRow").classList.toggle("hidden", !isEvent);
+    $("remDateRow").classList.toggle("hidden", !isRem);
+    $("remTimeRow").classList.toggle("hidden", !isRem || noDate);
+    $("remEndRow").classList.toggle("hidden", !isRem || noDate);
+    $("remDate").checked = form.hasDate; $("remTime").checked = form.hasTime; $("remEnd").checked = form.hasEnd;
+    document.querySelector('#itemDateWrap [data-action="quick-date"]').classList.toggle("hidden", noDate);
+    $("itemDate").parentElement.classList.toggle("hidden", noDate);
+    $("itemDateWrap").classList.toggle("hidden", isTimer && form.mode === "upnow");
+    $("itemEndWrap").classList.toggle("hidden", !showEnd);
+    $("placeWrap").classList.toggle("hidden", isTimer);
+
+    // repeating: weekly, fortnightly, monthly, or "every so many days / weeks / months / years"
+    $("repeatWrap").classList.toggle("hidden", isTimer || noDate);
+    const lit = form.repeatCustom ? "custom" : repeatPreset(form.repeat);
+    for (const b of $("repeatPicker").querySelectorAll("button")) {
+      const on = !!form.repeat && b.dataset.repeat === lit;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-pressed", on);
+    }
+    $("repeatCustom").classList.toggle("hidden", !(form.repeat && form.repeatCustom) || !!form.seriesId);
+    if (form.repeat) { $("repeatEvery").value = String(Math.min(form.repeat.every, 30)); $("repeatUnit").value = form.repeat.unit; }
+    $("repeatPicker").classList.toggle("hidden", !!form.seriesId);
+    const repeatHint = form.seriesText ? `One of a repeat (${form.seriesText.toLowerCase()}). Changes here only apply to this one.` : "";
+    $("repeatHint").textContent = repeatHint;
+    $("repeatHint").classList.toggle("hidden", !repeatHint);
+    $("itemDateLabel").textContent = isTimer ? (form.mode === "down" ? "Count down to" : "Count up from") : noDate ? "No date" : isRem && !form.hasEnd ? "When" : "Starts";
+    $("itemTime").setAttribute("aria-label", !isTimer ? "Start time" : "Time");
+    for (const id of ["itemTime", "itemEndTime"]) {
+      $(id).classList.toggle("hidden", allDay);
+      $(id).parentElement.classList.toggle("dateonly", allDay);
+    }
+
+    // how long the event runs, or a warning if the end has slipped in front of the start
+    const from = readWhen("itemDate", "itemTime", allDay ? "00:00" : ""), to = readWhen("itemEndDate", "itemEndTime", allDay ? "23:59" : "");
+    const backwards = showEnd && from && to && to < from;
+    let lasts = "";
+    if (showEnd && from && to && !backwards) {
+      const mins = Math.round((to - from) / 60000);
+      if (allDay) { const days = Math.round(mins / 1440) || 1; lasts = `Lasts ${days} day${days === 1 ? "" : "s"}`; }
+      else if (mins > 0) lasts = "Lasts " + spanWords(mins);
+    }
+    $("itemSpan").textContent = backwards ? "The end is before the start." : lasts;
+    $("itemSpan").classList.toggle("bad", !!backwards);
+
+    // assigned to: one button per person in their colour; tap each one on or off, so it can be for more than one
+    const h = state.household, me = state.user.uid;
+    const members = h.members || [];
+    $("forWrap").classList.toggle("hidden", members.length < 2);
+    $("peopleRow").classList.toggle("stack", members.length !== 2);
+    $("forPicker").innerHTML = members.map(m => {
+      const on = form.who.includes(m);
+      return `<button type="button" class="${on ? "on" : ""}" data-action="pick-for" data-uid="${escapeHtml(m)}" aria-pressed="${on}" ${whoStyle(m)}><i class="who-dot"></i>${m === me ? "Me" : escapeHtml(h.memberNames?.[m] || "Member")}</button>`;
+    }).join("");
+
+    // who can see it: something for another person has to be shared, and only whoever added it can change this
+    const others = form.who.filter(u => u !== form.creator);
+    const forOther = others.length > 0;
+    if (forOther) form.shared = true;
+    const cantPrivate = !form.mine || forOther;
+    $("sharePicker").innerHTML =
+      `<button type="button" class="${form.shared ? "on" : ""}" data-action="pick-share" data-share="shared" aria-pressed="${form.shared}"${form.mine ? "" : " disabled"} title="Shared with ${escapeHtml(othersLabel())}">Shared</button>` +
+      `<button type="button" class="${form.shared ? "" : "on"}" data-action="pick-share" data-share="private" aria-pressed="${!form.shared}"${cantPrivate ? " disabled" : ""}>Only ${form.mine ? "me" : escapeHtml(nameOf(form.creator))}</button>`;
+    const hint = !form.mine ? `Only ${nameOf(form.creator)} can change who sees this.`
+      : forOther ? `It's for ${joinNames(others.map(u => nameOf(u)))}${form.who.includes(form.creator) ? " too" : ""}, so it has to be shared.` : "";
+    $("shareHint").textContent = hint;
+    $("shareHint").classList.toggle("hidden", !hint);
+  }
+
+  // Moving the start carries the end along with it, so an event keeps its length.
+  function startChanged() {
+    form.dateTouched = true;
+    const start = readWhen("itemDate", "itemTime")?.getTime();
+    const end = readWhen("itemEndDate", "itemEndTime")?.getTime();
+    if (Number.isFinite(start)) {
+      if (Number.isFinite(end) && Number.isFinite(form.lastStart)) setWhen("itemEndDate", "itemEndTime", new Date(end + start - form.lastStart));
+      form.lastStart = start;
+    }
+    updateForm();
+  }
+  // Turning "All day" back off on a midnight-to-midnight event gives it ordinary hours to start from.
+  // A reminder's Time switch: turning it on for a day-only reminder gives it an ordinary hour to start from.
+  function remTimeChanged() {
+    form.hasTime = $("remTime").checked;
+    if (form.hasTime) {
+      if (pickedTime("itemTime") === "00:00") showTime("itemTime", "09:00");
+      if (pickedTime("itemEndTime") === "23:59") showTime("itemEndTime", form.hasEnd ? "10:00" : pickedTime("itemTime"));
+      form.lastStart = readWhen("itemDate", "itemTime")?.getTime() ?? form.lastStart;
+    }
+    updateForm();
+  }
+  // A reminder's End switch: on gives it an end an hour after the start to adjust; off takes the end away again.
+  function remEndChanged() {
+    form.hasEnd = form.endSet = $("remEnd").checked;
+    const start = readWhen("itemDate", "itemTime"), end = readWhen("itemEndDate", "itemEndTime");
+    if (start && (!form.hasEnd || !end || end <= start)) setWhen("itemEndDate", "itemEndTime", new Date(start.getTime() + (form.hasEnd ? 3600000 : 0)));
+    updateForm();
+  }
+  function allDayChanged() {
+    if (!$("itemAllDay").checked && pickedTime("itemTime") === "00:00" && pickedTime("itemEndTime") === "23:59") {
+      showTime("itemTime", "09:00");
+      showTime("itemEndTime", "10:00");
+      form.lastStart = readWhen("itemDate", "itemTime")?.getTime() ?? form.lastStart;
+    }
+    updateForm();
+  }
+
+  function setItemError(message) {
+    $("itemError").textContent = message;
+    $("itemError").style.display = message ? "block" : "none";
+  }
+
+  function saveItem() {
+    if (!state.user || !state.household) return;
+    const title = $("itemTitle").value.trim();
+    const type = form.type;
+    const isEvent = type === "calendar";
+    const mode = type === "timer" ? form.mode : "";
+    const isRem = type === "reminder";
+    const dateless = isRem && !form.hasDate;   // a general reminder: it's on the list, with no day or time
+    const allDay = isAllDay();
+    const when = mode === "upnow" ? new Date() : dateless ? null : readWhen("itemDate", "itemTime", allDay ? "00:00" : "");
+    if (!title) return setItemError("Give it a title first.");
+    if (!when && !dateless) return setItemError(allDay ? "Pick the day it starts." : "Pick a date.");
+    let end = null;
+    if (isEvent || (isRem && !dateless && form.hasEnd)) {
+      end = readWhen("itemEndDate", "itemEndTime", allDay ? "23:59" : "");
+      if (!end) return setItemError("Pick the day it ends.");
+      if (end < when) return setItemError("The end can't be before the start.");
+    }
+
+    const uid = state.user.uid;
+    const members = state.household.members || [];
+    let who = members.filter(m => form.who.includes(m));
+    if (!who.length) who = [form.creator];
+    const base = {
+      title,
+      type,
+      date: when ? when.toISOString() : "",
+      notes: $("itemNotes").value.trim(),
+      location: type === "timer" ? "" : $("itemPlace").value.trim().slice(0, 200),
+      assignedTo: who,
+      updatedAt: serverTimestamp()
+    };
+    if (type === "timer") base.timerMode = mode === "down" ? "down" : "up";
+    if (isEvent) { base.end = end.toISOString(); base.allDay = allDay; }
+    else if (isRem) {
+      base.allDay = allDay;
+      if (end && end > when) base.end = end.toISOString();   // a reminder only keeps an end that is later than its start
+    }
+    const inSeries = !!(state.editingId && findItem(state.editingId)?.seriesId);
+    const picked = type === "timer" || dateless || inSeries ? null : form.repeat;
+    const rule = !picked ? null : picked.unit === "month" || picked.unit === "year" ? { every: picked.every, unit: picked.unit, anchor: when.getDate() } : { every: picked.every, unit: picked.unit };
+    const shared = form.shared || who.some(u => u !== form.creator);
+    const forName = !who.includes(uid) ? " for " + joinNames(who.map(u => nameOf(u)))
+      : who.length > 1 ? (who.length === 2 ? " for both of you" : " for everyone") : "";
+
+    if (state.editingId) {
+      const existing = findItem(state.editingId);
+      if (!existing) return closeSheets();
+      const patch = { ...base };
+      if (!base.end && existing.end) patch.end = null;
+      if (type === "timer" && existing.allDay) patch.allDay = false;
+      if (existing.createdBy === uid) patch.shared = shared;
+      if (rule) {
+        // it starts repeating from here: this item becomes the first, and the rest are laid out after it
+        Object.assign(patch, { repeat: rule, repeatEnded: false, seriesId: existing.id, seriesStart: base.date, seriesK: 0 });
+        const count = layOutSeries({ seriesId: existing.id, template: { ...existing, ...patch }, rule, fromK: 1, limit: Math.max(Date.now(), when.getTime()) + SERIES_DAYS[rule.unit] * 86400000, first: { update: patch } });
+        toast(`Saved, repeating ${repeatText(rule).toLowerCase()} (${count} more added)`);
+      } else {
+        if (!inSeries && existing.repeat) patch.repeat = null;
+        updateDoc(itemRef(existing.id), patch).catch(writeFailed);
+        toast("Saved");
+      }
+    } else {
+      const fresh = {
+        ...base,
+        shared,
+        done: false,
+        createdBy: uid,
+        createdByName: myName(),
+        createdByEmail: state.user.email || "",
+        createdAt: serverTimestamp(),
+        comments: []
+      };
+      if (rule) {
+        // a repeat: the first one plus one item for every date ahead, each its own
+        const first = doc(itemsRef());
+        Object.assign(fresh, { repeat: rule, seriesId: first.id, seriesStart: base.date, seriesK: 0 });
+        const count = layOutSeries({ seriesId: first.id, template: fresh, rule, fromK: 1, limit: Math.max(Date.now(), when.getTime()) + SERIES_DAYS[rule.unit] * 86400000, first: { ref: first, set: fresh } });
+        toast(`Added${forName}, repeating ${repeatText(rule).toLowerCase()} (${count + 1} dates)`);
+      } else {
+        addDoc(itemsRef(), fresh).catch(writeFailed);
+        toast("Added" + forName);
+      }
+    }
+    closeSheets();
+  }
+
+  /* ---------- repeats: laying out, topping up, deleting ---------- */
+
+  // Saves one item for each date of a repeat, numbers fromK onward, up to the limit. Each is a complete item of
+  // its own with an empty chat. "first" optionally saves or updates the starting item in the same go.
+  // The ids are predictable, so two devices laying out the same stretch can't create doubles.
+  function layOutSeries({ seriesId, template, rule, fromK, limit, notBefore = -Infinity, first = null }) {
+    const uid = state.user.uid;
+    const start = new Date(template.seriesStart || template.date).getTime();
+    const span = Math.max(0, itemEnd(template) - itemTime(template));
+    const writes = [];
+    if (first?.set) writes.push(batch => batch.set(first.ref, first.set));
+    if (first?.update) writes.push(batch => batch.update(itemRef(seriesId), first.update));
+    let count = 0;
+    for (let k = fromK; count < 400; k++) {
+      const at = stepDate(start, rule, k).getTime();
+      if (at > limit) break;
+      if (at + span < notBefore) continue;
+      const one = {
+        title: template.title, type: template.type, date: new Date(at).toISOString(), allDay: !!template.allDay,
+        notes: template.notes || "", location: template.location || "", assignedTo: ownersOf(template), shared: !!template.shared,
+        done: false, repeat: rule, seriesId, seriesStart: new Date(start).toISOString(), seriesK: k,
+        ackBy: Array.isArray(template.ackBy) ? template.ackBy : [],
+        createdBy: uid, createdByName: myName(), createdByEmail: state.user.email || "",
+        createdAt: serverTimestamp(), updatedAt: serverTimestamp(), comments: []
+      };
+      if (span > 0) one.end = new Date(at + span).toISOString();
+      writes.push(batch => batch.set(itemRef(`${seriesId}_r${k}`), one));
+      count++;
+    }
+    for (let i = 0; i < writes.length; i += 400) {
+      const batch = writeBatch(db);
+      writes.slice(i, i + 400).forEach(write => write(batch));
+      batch.commit().catch(writeFailed);
+    }
+    return count;
+  }
+
+  // Keeps repeats going. Run whenever the items change; it only writes when there's something to add:
+  //  - a repeat that is running short of dates ahead gets its next stretch,
+  //  - a repeat saved by the earlier version (one item standing for all its dates) is laid out as individual items.
+  // Only the device of whoever created the repeat does this, so nothing is added twice or under the wrong name.
+  const seriesTried = new Set();
+  function extendSeries() {
+    if (!state.user || !state.household || !state.loaded.shared || !state.loaded.priv) return;
+    const uid = state.user.uid, now = Date.now();
+    const newest = {};
+    for (const item of state.items) {
+      if (item.createdBy !== uid) continue;
+      const rule = repeatOf(item);
+      if (rule && !item.seriesId && Number.isFinite(itemTime(item)) && !seriesTried.has(item.id)) {
+        seriesTried.add(item.id);
+        layOutSeries({
+          seriesId: item.id, template: item, rule, fromK: 1,
+          limit: Math.max(now, itemTime(item)) + SERIES_DAYS[rule.unit] * 86400000, notBefore: startOfDay(new Date()).getTime(),
+          first: { update: { seriesId: item.id, seriesStart: item.date, seriesK: 0 } }
+        });
+      }
+    }
+    for (const item of state.items) {
+      if (!item.seriesId || !Number.isInteger(item.seriesK)) continue;
+      if (!newest[item.seriesId] || item.seriesK > newest[item.seriesId].seriesK) newest[item.seriesId] = item;
+    }
+    for (const last of Object.values(newest)) {
+      const rule = repeatOf(last);   // nothing for a repeat that has been ended
+      if (!rule || last.createdBy !== uid || !last.seriesStart) continue;
+      const ahead = SERIES_DAYS[rule.unit] * 86400000;
+      if (stepDate(new Date(last.seriesStart), rule, last.seriesK).getTime() >= now + ahead / 2) continue;
+      const key = last.seriesId + "|" + last.seriesK;
+      if (seriesTried.has(key)) continue;
+      seriesTried.add(key);
+      layOutSeries({ seriesId: last.seriesId, template: last, rule, fromK: last.seriesK + 1, limit: now + ahead });
+    }
+  }
+
+  // "Delete this and future ones": removes this date and every later one of the same repeat, and marks the
+  // earlier ones as finished so the repeat isn't topped up again. Everything before this date is left as it is.
+  function deleteFromHere(item) {
+    const all = seriesItems(item.seriesId);
+    const from = Number.isInteger(item.seriesK) ? item.seriesK : Infinity;
+    const going = all.filter(i => i.id === item.id || (Number.isInteger(i.seriesK) && i.seriesK >= from));
+    const staying = all.filter(i => !going.includes(i));
+    const writes = [...going.map(i => batch => batch.delete(itemRef(i.id))), ...staying.map(i => batch => batch.update(itemRef(i.id), { repeatEnded: true, updatedAt: serverTimestamp() }))];
+    for (let i = 0; i < writes.length; i += 400) {
+      const batch = writeBatch(db);
+      writes.slice(i, i + 400).forEach(write => write(batch));
+      batch.commit().catch(writeFailed);
+    }
+    toast(`Deleted this and ${going.length - 1} later one${going.length === 2 ? "" : "s"}`);
+  }
+
+  function toggleDone(id) {
+    const item = findItem(id);
+    if (!item) return;
+    const done = !item.done;
+    // show it straight away; the saved copy follows a moment later
+    item.done = done;
+    item.doneBy = done ? state.user.uid : null;
+    item.doneAt = done ? { seconds: Date.now() / 1000 } : null;
+    render();
+    updateDoc(itemRef(id), {
+      done,
+      doneBy: done ? state.user.uid : null,
+      doneAt: done ? serverTimestamp() : null,
+      updatedAt: serverTimestamp()
+    }).catch(writeFailed);
+  }
+
+  function askDeleteItem() {
+    const item = findItem(state.editingId);
+    if (!item) return;
+    const id = item.id;
+    const forAll = item.shared ? " for everyone in the household" : "";
+    // one date of a repeat: delete just this one, or this one and all the later ones
+    const later = Number.isInteger(item.seriesK) ? seriesItems(item.seriesId).filter(i => i.id !== id && Number.isInteger(i.seriesK) && i.seriesK > item.seriesK).length : 0;
+    const inSeries = !!item.seriesId && !!repeatOf(item);
+    const when = Number.isFinite(itemTime(item)) ? ` on ${formatDay(new Date(itemTime(item)))}` : "";
+    openConfirm({
+      title: inSeries ? "Delete this one, or the rest too?" : "Delete this?",
+      text: inSeries
+        ? `“${item.title}”${when} is one of a repeat. Delete just this one, or this one and all the later ones? Earlier ones are kept. This can't be undone.`
+        : `“${item.title}” will be removed${forAll}. This can't be undone.`,
+      okLabel: inSeries ? "Delete this one" : "Delete",
+      danger: true,
+      action: () => {
+        deleteDoc(itemRef(id)).catch(writeFailed);
+        toast("Deleted");
+      },
+      alt: inSeries ? { label: `Delete this and future ones${later ? ` (${later + 1})` : ""}`, action: () => deleteFromHere(item) } : null
+    });
+  }
+
+  /* ---------- acknowledging and chatting about an item ---------- */
+
+  // Acknowledging one date of a repeat acknowledges all of its dates: it was added as one thing,
+  // and nobody wants fifty thumbs-up to tap.
+  function acknowledgeItems(ids) {
+    const uid = state.user.uid;
+    const todo = new Map();
+    for (const id of ids) {
+      const item = findItem(id);
+      if (!item) continue;
+      for (const one of item.seriesId ? seriesItems(item.seriesId) : [item]) {
+        if (!(Array.isArray(one.ackBy) && one.ackBy.includes(uid))) todo.set(one.id, one);
+      }
+    }
+    if (!todo.size) return 0;
+    // show them as acknowledged straight away; the saved copy follows a moment later
+    for (const one of todo.values()) one.ackBy = [...(one.ackBy || []), uid];
+    render();
+    const list = [...todo.keys()];
+    for (let i = 0; i < list.length; i += 400) {
+      const batch = writeBatch(db);
+      list.slice(i, i + 400).forEach(id => batch.update(itemRef(id), { ackBy: arrayUnion(uid), updatedAt: serverTimestamp() }));
+      batch.commit().catch(writeFailed);
+    }
+    return todo.size;
+  }
+  function acknowledge(id) { acknowledgeItems([id]); }
+
+  // A card that has left the screen closes up, so the ones below slide into its place.
+  function collapseCard(card) {
+    const box = card.getBoundingClientRect();
+    const cs = getComputedStyle(card);
+    const gap = parseFloat(getComputedStyle(card.parentElement).rowGap) || 0;
+    card.style.overflow = "hidden";
+    return card.animate([
+      { height: box.height + "px", paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom, borderTopWidth: cs.borderTopWidth, borderBottomWidth: cs.borderBottomWidth, marginBottom: "0px" },
+      { height: "0px", paddingTop: "0px", paddingBottom: "0px", borderTopWidth: "0px", borderBottomWidth: "0px", marginBottom: -gap + "px" }
+    ], { duration: 300, easing: "cubic-bezier(.2,.9,.25,1)", fill: "forwards" }).finished;
+  }
+
+  // Ticking a reminder on the Home page. Under Overdue it dissolves away; under Today and Coming up it fades to grey
+  // and stays put (and fades back if it's un-ticked). Anywhere else, and with reduced motion, it just ticks.
+  async function toggleFrom(button) {
+    const id = button.dataset.id;
+    const item = findItem(id);
+    const card = button.closest(".item");
+    const listId = card?.parentElement?.id;
+    const effect = listId === "overdueList" ? "dissolve" : listId === "todayList" || listId === "upcomingList" ? "grey" : "";
+    const calm = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (!item || !effect || calm || typeof card.animate !== "function" || state.animating) return toggleDone(id);
+
+    state.animating = true;
+    const done = !item.done;
+    try {
+      card.style.pointerEvents = "none";
+      button.classList.toggle("on", done);   // the tick fills (or empties) at once, then the card follows
+      button.textContent = done ? "✓" : "";
+      if (effect === "dissolve") {
+        card.style.willChange = "opacity, filter, transform";
+        await card.animate([
+          { opacity: 1, filter: "blur(0px)", transform: "scale(1)" },
+          { opacity: 0, filter: "blur(7px)", transform: "scale(.97)" }
+        ], { duration: 520, delay: 160, easing: "cubic-bezier(.4,0,.7,.4)", fill: "forwards" }).finished;
+        await collapseCard(card);
+      } else {
+        const plain = { opacity: 1, filter: "grayscale(0)" }, grey = { opacity: .55, filter: "grayscale(1)" };
+        await card.animate(done ? [plain, grey] : [grey, plain], { duration: 420, easing: "ease-out", fill: "forwards" }).finished;
+      }
+    } catch (error) {
+      console.warn(error);
+    }
+    state.animating = false;
+    toggleDone(id);
+  }
+
+  const SWIPE_AWAY = [
+    { transform: "translateX(0) rotate(0deg)", opacity: 1, offset: 0, easing: "cubic-bezier(.3,0,.3,1)" },
+    { transform: "translateX(-16px) rotate(-.8deg)", opacity: 1, offset: .24, easing: "cubic-bezier(.55,0,.9,.45)" },
+    { transform: "translateX(70%) rotate(1.6deg)", opacity: .9, offset: .8, easing: "linear" },
+    { transform: "translateX(120%) rotate(2.4deg)", opacity: 0, offset: 1 }
+  ];
+
+  // "Acknowledge all" on the Notifications page: everything listed there right now, in one go.
+  // The cards sweep away one after another, top first.
+  async function acknowledgeAll() {
+    if (state.animating) return;
+    const cards = [...$("activityList").querySelectorAll(".item")];
+    const ids = cards.map(card => card.querySelector("[data-action='ack']")?.dataset.id).filter(Boolean).slice(0, 400);
+    if (!ids.length) return;
+    const uid = state.user.uid;
+    const calm = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (!calm && typeof cards[0].animate === "function") {
+      state.animating = true;
+      try {
+        await Promise.all(cards.map((card, i) => {
+          card.style.pointerEvents = "none";
+          return card.animate(SWIPE_AWAY, { duration: 520, delay: Math.min(i, 8) * 70, fill: "forwards" }).finished;
+        }));
+      } catch (error) {
+        console.warn(error);
+      }
+      state.animating = false;
+    }
+    acknowledgeItems(ids);
+    toast(ids.length === 1 ? "Acknowledged" : `Acknowledged all ${ids.length}`);
+  }
+
+  async function acknowledgeFrom(button) {
+    const id = button.dataset.id;
+    const card = button.closest(".item");
+    const inNotifications = !!card && card.parentElement?.id === "activityList";
+    const calm = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (!inNotifications || calm || typeof card.animate !== "function" || state.animating) return acknowledge(id);
+
+    state.animating = true;
+    try {
+      card.style.pointerEvents = "none";
+      card.style.willChange = "transform, opacity";
+      await card.animate(SWIPE_AWAY, { duration: 560, fill: "forwards" }).finished;
+      await collapseCard(card);
+    } catch (error) {
+      console.warn(error);
+    }
+    state.animating = false;
+    acknowledge(id);
+  }
+
+  function personName(uid, fallback) {
+    return uid === state.user.uid ? "You" : (state.household?.memberNames?.[uid] || fallback || "Someone");
+  }
+  function chatTime(iso) {
+    const d = new Date(iso);
+    if (!Number.isFinite(d.getTime())) return "";
+    return dayKey(d) === dayKey(new Date())
+      ? d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+      : d.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
+  }
+  function messageHtml(c) {
+    return `<div class="chat-msg"><b style="color:${colorOf(c.by)}">${escapeHtml(personName(c.by, c.byName))}</b>${escapeHtml(c.text || "")}${c.at ? `<time>${escapeHtml(chatTime(c.at))}</time>` : ""}</div>`;
+  }
+
+  // Under an item, on every list: every message about it, oldest first.
+  function chatPreviewHtml(item) {
+    const comments = Array.isArray(item.comments) ? item.comments : [];
+    if (!comments.length) return "";
+    return `<div class="chat">${comments.map(messageHtml).join("")}</div>`;
+  }
+
+  // Who has acknowledged a shared item. The person who added it sees the others' status; everyone else gets a button.
+  // Acknowledging a shared item. Returns the control for the right-hand side of the row
+  // and the "Acknowledged by …" note that goes on the details line.
+  // The note only ever names other people: your own acknowledgement shows as a green tick where the button was.
+  function ackParts(item) {
+    const h = state.household;
+    const uid = state.user.uid;
+    const others = (h.members || []).filter(m => m !== item.createdBy);
+    if (!item.shared || !others.length) return { control: "", note: "" };
+    const acked = Array.isArray(item.ackBy) ? item.ackBy : [];
+    const name = m => h.memberNames?.[m] || "Member";
+    const doneByOthers = others.filter(m => m !== uid && acked.includes(m));
+    const waiting = others.filter(m => !acked.includes(m));
+    const note = doneByOthers.length
+      ? `<span class="ack-note">${ICONS.thumb}Acknowledged by ${escapeHtml(doneByOthers.map(name).join(" & "))}</span>`
+      : "";
+    let control = "";
+    if (item.createdBy !== uid) {
+      control = acked.includes(uid)
+        ? `<span class="ack-status ok" title="You've acknowledged this">${ICONS.check}<span class="sr">You've acknowledged this</span></span>`
+        : `<button class="pill primary ack-btn" data-action="ack" data-id="${escapeHtml(item.id)}" aria-label="Acknowledge" title="Acknowledge">${ICONS.thumb}</button>`;
+    } else if (waiting.length) {
+      const text = `Waiting for ${waiting.map(name).join(" & ")} to acknowledge`;
+      control = `<span class="ack-status" title="${escapeHtml(text)}">${ICONS.thumb}<span class="sr">${escapeHtml(text)}</span></span>`;
+    }
+    return { control, note };
+  }
+
+  function openChat(id) {
+    const item = findItem(id);
+    if (!item) return;
+    state.editingId = null;
+    state.chatId = id;
+    $("chatTitle").textContent = item.title;
+    $("chatSub").textContent = formatWhen(item);
+    $("chatInput").value = "";
+    renderChatThread();
+    openSheet("chatSheet");
+    $("chatInput").focus();
+  }
+
+  function renderChatThread() {
+    const item = findItem(state.chatId);
+    const comments = Array.isArray(item?.comments) ? item.comments : [];
+    const box = $("chatList");
+    box.innerHTML = comments.length
+      ? comments.map(messageHtml).join("")
+      : `<div class="small">No messages yet. Start the conversation below.</div>`;
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function sendChat() {
+    const item = findItem(state.chatId);
+    const text = $("chatInput").value.trim();
+    if (!item || !text) return;
+    updateDoc(itemRef(item.id), {
+      comments: arrayUnion({ text, by: state.user.uid, byName: myName(), at: new Date().toISOString() }),
+      updatedAt: serverTimestamp()
+    }).catch(writeFailed);
+    $("chatInput").value = "";
+    $("chatInput").focus();
+  }
+
+  function askClearDone() {
+    const done = state.items.filter(i => i.type === "reminder" && i.done);
+    if (!done.length) return;
+    openConfirm({
+      title: "Clear completed reminders?",
+      text: `${done.length} completed reminder${done.length === 1 ? "" : "s"} will be deleted for good.`,
+      okLabel: "Clear",
+      danger: true,
+      action: () => {
+        const batch = writeBatch(db);
+        done.slice(0, 400).forEach(i => batch.delete(itemRef(i.id)));
+        batch.commit().catch(writeFailed);
+      }
+    });
+  }
+
+  /* ---------- automatic tidy-up ---------- */
+
+  const KEEP_EVENTS_DAYS = 365;        // calendar events are removed a year after they happen
+  const KEEP_DONE_DAYS = 365;          // ticked-off reminders are removed a year after being ticked
+  const TIDY_EVERY_MS = 12 * 3600000;  // each device checks at most twice a day
+  let tidying = false;
+
+  function expiredItems(now = Date.now()) {
+    const eventCutoff = now - KEEP_EVENTS_DAYS * 86400000;
+    const doneCutoff = now - KEEP_DONE_DAYS * 86400000;
+    return state.items.filter(item => {
+      const t = itemTime(item);
+      if (item.type === "calendar") return Number.isFinite(t) && itemEnd(item) < eventCutoff;
+      if (item.type === "reminder" && item.done) {
+        const doneTime = dateValue(item.doneAt) || dateValue(item.updatedAt) || t;
+        return Number.isFinite(doneTime) && doneTime > 0 && doneTime < doneCutoff;
+      }
+      return false; // timers and unfinished reminders are never removed automatically
+    });
+  }
+
+  function tidyUp() {
+    if (tidying || !state.user || !state.household || !state.loaded.shared || !state.loaded.priv) return;
+    if (navigator.onLine === false) return;
+    const key = "tidynest-tidied-" + state.user.uid;
+    let last = 0;
+    try { last = Number(localStorage.getItem(key)) || 0; } catch {}
+    if (Date.now() - last < TIDY_EVERY_MS) return;
+    try { localStorage.setItem(key, String(Date.now())); } catch {}
+    const old = expiredItems().slice(0, 400);
+    if (!old.length) return;
+    tidying = true;
+    const batch = writeBatch(db);
+    old.forEach(item => batch.delete(itemRef(item.id)));
+    batch.commit()
+      .catch(error => console.warn("Tidy-up skipped", error))
+      .finally(() => { tidying = false; });
+  }
+
+  /* ---------- rendering ---------- */
+
+  // "in 3 days 4 hours": how long until something happens, using its two biggest units.
+  // Weeks pair with days (or hours when there are no spare days), days with hours, hours with minutes.
+  function spanWords(mins) {
+    const unit = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+    const w = Math.floor(mins / 10080), d = Math.floor((mins % 10080) / 1440), h = Math.floor((mins % 1440) / 60), m = mins % 60;
+    let parts;
+    if (w) parts = [unit(w, "week"), d ? unit(d, "day") : h ? unit(h, "hour") : ""];
+    else if (d) parts = [unit(d, "day"), h ? unit(h, "hour") : ""];
+    else if (h) parts = [unit(h, "hour"), m ? unit(m, "minute") : ""];
+    else parts = [unit(m, "minute")];
+    return parts.filter(Boolean).join(" ");
+  }
+  function untilText(t, now = Date.now()) {
+    if (!Number.isFinite(t) || t <= now) return "";
+    const mins = Math.floor((t - now) / 60000);
+    return mins < 1 ? "in less than a minute" : "in " + spanWords(mins);
+  }
+
+  // The chat button for anything shared with someone else. It's on every list, with the messages shown under the item.
+  function chatButton(item) {
+    if (!item.shared || (state.household.members || []).length < 2) return "";
+    const label = Array.isArray(item.comments) && item.comments.length ? "Reply" : "Chat";
+    return `<button class="pill chat-btn" data-action="chat" data-id="${escapeHtml(item.id)}" aria-label="${label}" title="${label}">${ICONS.chat}</button>`;
+  }
+
+  function renderItem(item, onHome = false) {
+    const t = itemTime(item);
+    const owners = ownersOf(item), multi = owners.length > 1 ? " multi" : "";
+    const overdue = item.type === "reminder" && !item.done && Number.isFinite(t) && t < Date.now();
+    const id = escapeHtml(item.id);
+    const rule = repeatOf(item);
+    const lead = item.type === "reminder"
+      ? `<button class="tick ${item.done ? "on" : ""}" data-action="toggle" data-id="${id}" aria-label="${item.done ? "Mark as not done" : "Mark as done"}">${item.done ? "✓" : ""}</button>`
+      : `<div class="icon ${escapeHtml(item.type)}">${typeIcon(item.type)}</div>`;
+    const ack = onHome ? ackParts(item) : { control: "", note: "" };
+    const left = t - Date.now();
+    // an event that has started and not yet finished says "on now" instead of how long is left
+    const onNow = item.type === "calendar" && !item.allDay && left <= 0 && itemEnd(item) > Date.now();
+    const until = item.done ? "" : onNow ? "on now" : untilText(t);   // on every list: Home, Notifications, Reminders and the calendar's day list
+    const untilClass = onNow ? "now" : left <= 3 * 3600000 ? "close" : left < 86400000 ? "soon" : "";
+    // a reminder whose time has passed: "Due" (amber) if it was for today or is still running, "Overdue" (red) once its last day has gone
+    const lateBadge = !overdue ? "" : itemEnd(item) >= startOfDay(new Date()).getTime()
+      ? '<span class="badge due">Due</span>'
+      : '<span class="badge overdue">Overdue</span>';
+    // title, then one line with the date, any Overdue badge, who it belongs to and who has acknowledged it
+    // a ticked-off reminder says who ticked it
+    const doneNote = item.type === "reminder" && item.done
+      ? `<span class="done-by">${ICONS.check}Completed${item.doneBy ? " by " + escapeHtml(nameOf(item.doneBy)) : ""}</span>` : "";
+    // The address is a real link (tap for directions), so it sits beside the title's button, not inside a button.
+    const body = `<div class="item-text">
+      <div class="item-head"><button class="item-title" data-action="edit-title" data-id="${id}">${escapeHtml(item.title)}</button>${placeHtml(item)}</div>
+      <button class="item-body" data-action="edit" data-id="${id}">
+        <span class="item-meta"><span class="sr">${typeName(item.type)}. </span><span>${whenHtml(item)}</span>${doneNote}${until ? `<span class="until ${untilClass}">${until}</span>` : ""}${lateBadge}${rule ? `<span class="repeats">${ICONS.repeat}${repeatText(rule)}</span>` : ""}<span class="shared">${shareLabel(item)}</span>${ack.note}</span>
+        ${item.notes ? `<span class="item-notes">${escapeHtml(item.notes)}</span>` : ""}
+      </button>
+    </div>`;
+    // the buttons sit to the right of the text (chat everywhere, acknowledge on Home and Notifications); messages run underneath
+    const actions = ack.control + chatButton(item);
+    return `<div class="item ${item.done ? "done" : ""}${multi}" ${whoStyle(owners)}>
+      ${lead}
+      <div class="item-main">
+        <div class="item-top">${body}${actions ? `<div class="row-actions">${actions}</div>` : ""}</div>
+        ${chatPreviewHtml(item)}
+      </div>
+    </div>`;
+  }
+  const renderHomeItem = item => renderItem(item, true);
+
+  // Which way a timer runs. Older timers have no setting, so work it out from when they were made.
+  function timerMode(item) {
+    if (item.timerMode === "down" || item.timerMode === "up") return item.timerMode;
+    const made = dateValue(item.createdAt) || Date.now();
+    return itemTime(item) > made ? "down" : "up";
+  }
+  function formatSpan(ms) {
+    const abs = Math.max(0, Math.abs(ms));
+    const d = Math.floor(abs / 86400000);
+    const h = Math.floor((abs % 86400000) / 3600000);
+    const m = Math.floor((abs % 3600000) / 60000);
+    const sec = Math.floor((abs % 60000) / 1000);
+    if (d > 0) return `${d}d ${h}h ${m}m`;
+    if (h > 0) return `${h}h ${m}m ${sec}s`;
+    return `${m}m ${sec}s`;
+  }
+  function timerReadout(t, mode, now = Date.now()) {
+    if (!Number.isFinite(t)) return { number: "—", label: "No date set" };
+    const when = formatDateTime(new Date(t).toISOString());
+    if (mode === "down") {
+      return t > now
+        ? { number: formatSpan(t - now), label: `Counting down to ${when}` }
+        : { number: "Finished", label: `Reached ${when}, ${formatSpan(now - t)} ago`, over: true };
+    }
+    return t <= now
+      ? { number: formatSpan(now - t), label: `Counting up from ${when}` }
+      : { number: "Not started", label: `Starts ${when}`, over: true };
+  }
+
+  function renderTimer(item) {
+    const t = itemTime(item);
+    const mode = timerMode(item);
+    const r = timerReadout(t, mode);
+    const id = escapeHtml(item.id);
+    const owners = ownersOf(item);
+    const chat = chatButton(item);
+    return `<div class="item${owners.length > 1 ? " multi" : ""}" ${whoStyle(owners)}>
+      <div class="icon timer">${ICONS.timer}</div>
+      <div class="item-main">
+        <div class="item-top">
+          <button class="item-body" data-action="edit" data-id="${id}">
+            <span class="item-title">${escapeHtml(item.title)}</span>
+            <span class="timer-number ${r.over ? "over" : ""}" data-t="${Number.isFinite(t) ? t : ""}" data-mode="${mode}">${escapeHtml(r.number)}</span>
+            <span class="item-meta"><span class="timer-label">${escapeHtml(r.label)}</span><span class="shared">${shareLabel(item)}</span></span>
+            ${item.notes ? `<span class="item-notes">${escapeHtml(item.notes)}</span>` : ""}
+          </button>
+          ${chat ? `<div class="row-actions">${chat}</div>` : ""}
+        </div>
+        ${chatPreviewHtml(item)}
+      </div>
+    </div>`;
+  }
+
+  // Once a second, refresh just the numbers on any timers that are on screen.
+  function tickTimers() {
+    const now = Date.now();
+    document.querySelectorAll(".timer-number[data-t]").forEach(el => {
+      if (!el.offsetParent) return;
+      const r = timerReadout(el.dataset.t === "" ? NaN : Number(el.dataset.t), el.dataset.mode, now);
+      if (el.textContent !== r.number) el.textContent = r.number;
+      el.classList.toggle("over", !!r.over);
+      const label = el.parentElement.querySelector(".timer-label");
+      if (label && label.textContent !== r.label) label.textContent = r.label;
+    });
+  }
+
+  function byDate(a, b) { return (itemTime(a) || 0) - (itemTime(b) || 0); }
+  function list(el, rows, renderer, emptyText) {
+    $(el).innerHTML = rows.length ? rows.map(row => renderer(row)).join("") : `<div class="empty">${emptyText}</div>`;
+  }
+
+  function render() {
+    if (!state.user || !state.household) return;
+    if (state.animating) return;   // a card is mid-swipe; the acknowledge that follows redraws everything
+    state.colors = colorMap();
+    const now = new Date();
+    const todayKey = dayKey(now);
+    const todayStart = startOfDay(now).getTime();
+    const weekEnd = addDays(startOfDay(now), 8).getTime();
+    const items = state.items;
+
+    const overdue = items.filter(i => i.type === "reminder" && !i.done && itemEnd(i) < todayStart).sort(byDate);
+    $("overdueSection").classList.toggle("hidden", !overdue.length);
+    list("overdueList", overdue, renderHomeItem, "");
+
+    // Today: anything dated today, plus events that started earlier and are still running
+    const tomorrowStart = addDays(startOfDay(now), 1).getTime();
+    // Today: anything dated today, plus events that started earlier and are still running
+    const today = items.filter(i => itemDayKeys(i).includes(todayKey)).sort(byDate);
+    list("todayList", today, renderHomeItem, "Nothing scheduled for today.");
+
+    // Coming up: everything from tomorrow to the end of the 7th day from today, however many there are.
+    // Reminders ticked off early stay here, greyed out, until their day has passed.
+    const upcoming = items
+      .filter(i => { const t = itemTime(i); return t >= tomorrowStart && t < weekEnd; })
+      .sort(byDate);
+    list("upcomingList", upcoming, renderHomeItem, "Nothing in the next 7 days.");
+
+    // Notifications page: shared things other people have added that you haven't acknowledged yet, newest first.
+    // Your own additions never appear here; you see whether they've been acknowledged on the item itself.
+    const me = state.user.uid;
+    // A repeat counts once: its next date stands for all of them.
+    const firstOfSeries = new Map();
+    const recent = items
+      .filter(i => i.shared && !i.done && i.createdBy !== me && !(Array.isArray(i.ackBy) && i.ackBy.includes(me)))
+      .sort((a, b) => (itemEnd(a) < now.getTime()) - (itemEnd(b) < now.getTime()) || byDate(a, b))
+      .filter(i => !i.seriesId || (!firstOfSeries.has(i.seriesId) && firstOfSeries.set(i.seriesId, i)))
+      .sort((a, b) => dateValue(b.createdAt) - dateValue(a.createdAt));
+    list("activityList", recent, renderHomeItem, "You're all caught up. Anything new that someone else adds waits here until you've acknowledged it.");
+    const waitingOnMe = recent.length;
+    $("ackAll").classList.toggle("hidden", !waitingOnMe);
+    $("navBadge").textContent = waitingOnMe > 9 ? "9+" : String(waitingOnMe);
+    $("navBadge").classList.toggle("hidden", !waitingOnMe);
+    document.querySelector('.nav [data-view="notifications"]').setAttribute("aria-label", waitingOnMe ? `Notifications, ${waitingOnMe} to acknowledge` : "Notifications");
+
+    // reminders to do: by date, with the ones that have no set date after them
+    const dated = i => Number.isFinite(itemTime(i));
+    // Of a repeating reminder, only what's due by today and the next one after that are listed; the rest wait in the calendar.
+    const nextOfSeries = new Set();
+    const open = items.filter(i => i.type === "reminder" && !i.done).sort((a, b) => dated(b) - dated(a) || byDate(a, b))
+      .filter(i => !i.seriesId || itemTime(i) < tomorrowStart || (!nextOfSeries.has(i.seriesId) && nextOfSeries.add(i.seriesId)));
+    list("reminderList", open, renderItem, "No reminders waiting.");
+    const done = items.filter(i => i.type === "reminder" && i.done)
+      .sort((a, b) => dateValue(b.doneAt) - dateValue(a.doneAt));
+    // completed reminders stay out of sight behind their button until it's tapped
+    if (!done.length) state.showDone = false;
+    $("doneSection").classList.toggle("hidden", !done.length);
+    $("doneBox").classList.toggle("hidden", !state.showDone);
+    $("doneToggle").setAttribute("aria-expanded", String(!!state.showDone));
+    $("doneCount").textContent = `(${done.length})`;
+    list("doneList", state.showDone ? done.slice(0, 300) : [], renderItem, "");
+
+    const timers = items.filter(i => i.type === "timer");
+    // Countdowns: soonest first, finished ones last. Count-ups: most recently started first.
+    const downs = timers.filter(i => timerMode(i) === "down").sort((a, b) => {
+      const pa = itemTime(a) <= Date.now(), pb = itemTime(b) <= Date.now();
+      return pa === pb ? byDate(a, b) : pa ? 1 : -1;
+    });
+    const ups = timers.filter(i => timerMode(i) === "up").sort((a, b) => byDate(b, a));
+    list("timerDownList", downs, renderTimer, "No countdowns yet. Tap + at the top to count down to a date and time.");
+    list("timerUpList", ups, renderTimer, "Nothing counting up yet. Tap + at the top and choose “Count up”.");
+
+    renderCalendar();
+    renderSettings();
+    renderSync();
+
+    if (state.view === "home") $("pageTitle").innerHTML = "Tidy<span>Nest</span>";
+    else $("pageTitle").textContent = state.view.charAt(0).toUpperCase() + state.view.slice(1);
+    $("pageSubtitle").textContent = now.toLocaleDateString([], { weekday:"long", day:"numeric", month:"long" });
+  }
+
+  function renderCalendar() {
+    const month = state.calMonth;
+    $("calMonthLabel").textContent = month.toLocaleDateString([], { month:"long", year:"numeric" });
+
+    const offset = (month.getDay() + 6) % 7; // weeks start on Monday
+    const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+    const cells = Math.ceil((offset + daysInMonth) / 7) * 7;
+
+    const byDay = {};
+    for (const item of state.items) {
+      for (const key of itemDayKeys(item)) (byDay[key] ||= []).push(item);   // an event over several days sits on each of them
+    }
+
+    const todayKey = dayKey(new Date());
+    const selKey = dayKey(state.selectedDate);
+    let html = "";
+    for (let i = 0; i < cells; i++) {
+      const d = new Date(month.getFullYear(), month.getMonth(), 1 - offset + i);
+      const key = dayKey(d);
+      const people = [...new Set((byDay[key] || []).filter(x => !x.done).flatMap(x => ownersOf(x)))].slice(0, 4);
+      const cls = ["cal-cell"];
+      if (d.getMonth() !== month.getMonth()) cls.push("other");
+      if (key === todayKey) cls.push("today");
+      if (key === selKey) cls.push("sel");
+      const count = (byDay[key] || []).length;
+      html += `<button class="${cls.join(" ")}" data-action="cal-day" data-day="${key}" aria-label="${escapeHtml(d.toLocaleDateString([], { weekday:"long", day:"numeric", month:"long" }))}${count ? `, ${count} item${count === 1 ? "" : "s"}` : ""}"${key === selKey ? ' aria-pressed="true"' : ""}>
+        <span class="num">${d.getDate()}</span>
+        <span class="dots">${people.map(who => `<span class="dot-i" ${whoStyle(who)}></span>`).join("")}</span>
+      </button>`;
+    }
+    $("calDays").innerHTML = html;
+
+    $("calDayLabel").textContent = state.selectedDate.toLocaleDateString([], { weekday:"long", day:"numeric", month:"long" });
+    const dayItems = (byDay[selKey] || []).slice().sort(byDate);
+    list("calendarItems", dayItems, i => i.type === "timer" ? renderTimer(i) : renderItem(i), "Nothing on this day.");
+  }
+
+  function notificationState() {
+    if (!("Notification" in window)) return "unsupported";
+    return Notification.permission; // default | granted | denied
+  }
+
+  function hasLegacyLocalData() {
+    try {
+      if (localStorage.getItem(LEGACY_LOCAL_KEY + "-imported")) return 0;
+      const data = JSON.parse(localStorage.getItem(LEGACY_LOCAL_KEY) || "[]");
+      return Array.isArray(data) ? data.length : 0;
+    } catch { return 0; }
+  }
+
+  function renderSettings() {
+    const h = state.household;
+    const uid = state.user.uid;
+    const members = (h.members || []).map(m =>
+      `<span style="white-space:nowrap"><i class="who-dot" ${whoStyle(m)}></i>${m === uid ? `${escapeHtml(myName())} (you)` : escapeHtml(h.memberNames?.[m] || "Member")}</span>`
+    ).join(", ");
+    const swatches = COLORS.map(c => {
+      const owner = Object.keys(state.colors).find(m => state.colors[m] === c);
+      const mine = owner === uid;
+      const theirs = owner && !mine;
+      const ownerName = theirs ? (h.memberNames?.[owner] || "Member") : "";
+      return `<button class="swatch ${mine ? "on" : ""}" data-action="pick-colour" data-colour="${c}" style="--who:var(--c-${c})"` +
+        ` aria-label="${COLOR_NAMES[c]}${mine ? ", your colour" : theirs ? ", taken by " + escapeHtml(ownerName) : ""}" aria-pressed="${mine}"${theirs ? " disabled" : ""}>` +
+        `${theirs ? escapeHtml(ownerName.charAt(0).toUpperCase()) : mine ? "✓" : ""}</button>`;
+    }).join("");
+
+    const notif = notificationState();
+    const notifHtml = {
+      unsupported: `<span class="small">Not available in this browser. On iPhone, add TidyNest to your Home Screen first.</span>`,
+      default: `<span class="small">Off</span><button data-action="enable-alerts">Turn on</button>`,
+      granted: `<span class="small">On while TidyNest is open on this device</span>`,
+      denied: `<span class="small">Blocked in this browser's settings</span>`
+    }[notif];
+
+    const standalone = window.matchMedia?.("(display-mode: standalone)").matches || navigator.standalone === true;
+    const legacyCount = hasLegacyLocalData();
+
+    $("settingsList").innerHTML = `
+      <div class="settings-row"><span>Your name</span><span class="val"><span class="small">${escapeHtml(myName())}</span><button data-action="edit-name">Change</button></span></div>
+      <div class="settings-row stack"><span>Your colour<br><span class="small" style="font-weight:500">Marks everything that's yours</span></span><span class="swatches">${swatches}</span></div>
+      <div class="settings-row"><span>Account</span><span class="val"><span class="small">${escapeHtml(state.user.email || "")}</span></span></div>
+      <div class="settings-row"><span>Household</span><span class="val"><span class="small">${escapeHtml(h.name)}</span><button data-action="rename-household">Rename</button></span></div>
+      <div class="settings-row"><span>Members</span><span class="val"><span class="small">${members}</span><button data-action="invite">Invite</button></span></div>
+      <div class="settings-row"><span>Sync</span><span class="val"><span id="syncStatus" class="status"></span></span></div>
+      <div class="settings-row"><span>Phone alerts</span><span class="val">${notifHtml}</span></div>
+      ${standalone ? "" : `<div class="settings-row"><span>Install</span><span class="val"><span class="small">Use your browser's Share or menu button, then “Add to Home Screen”.</span></span></div>`}
+      ${legacyCount ? `<div class="settings-row"><span>Old data on this device</span><span class="val"><span class="small">${legacyCount} item${legacyCount === 1 ? "" : "s"}</span><button data-action="import-local">Import</button></span></div>` : ""}
+      <div class="settings-row"><span>Tidy-up</span><span class="val"><span class="small">Events are removed a year after they happen. Completed reminders are removed a year after they're ticked off.</span></span></div>
+      <div class="settings-row"><span>Signed in</span><span class="val"><button data-action="sign-out">Sign out</button></span></div>
+      <div class="settings-row"><span>Version</span><span class="val"><span class="small">${VERSION}</span></span></div>`;
+  }
+
+  function renderSync() {
+    const online = navigator.onLine !== false;
+    const ok = online && !state.syncError;
+    const status = $("syncStatus");
+    if (status) {
+      status.innerHTML = `<span class="dot ${ok ? "" : "off"}"></span>${ok ? "Connected" : online ? "Problem" : "Offline"}`;
+    }
+    const note = $("syncNote");
+    if (state.syncError) {
+      note.textContent = state.syncError;
+      note.classList.add("bad");
+      note.classList.remove("hidden");
+    } else if (!online) {
+      note.textContent = "You're offline. Changes are saved on this device and will sync when you're back online.";
+      note.classList.remove("bad", "hidden");
+    } else {
+      note.classList.add("hidden");
+    }
+  }
+
+  function showView(name) {
+    state.view = name;
+    document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === name + "View"));
+    document.querySelectorAll(".nav button").forEach(b => b.classList.toggle("active", b.dataset.view === name));
+    $("headerAdd").classList.toggle("hidden", name === "settings" || name === "notifications");
+    $("headerAdd").setAttribute("aria-label", { calendar: "Add an event on the selected day", reminders: "Add a reminder", timers: "Add a timer" }[name] || "Add");
+    window.scrollTo(0, 0);
+    render();
+  }
+
+  /* ---------- sheets ---------- */
+
+  function openSheet(id) {
+    document.querySelectorAll("#backdrop .modal").forEach(m => m.classList.toggle("hidden", m.id !== id));
+    $("backdrop").classList.add("open");
+  }
+  function closeSheets() {
+    $("backdrop").classList.remove("open");
+    hidePlaces();
+    hideMemo();
+    state.editingId = null;
+    state.chatId = null;
+    textSheetSave = null;
+    confirmAction = null;
+    confirmAltAction = null;
+  }
+  function openTextSheet({ title, label, value, save }) {
+    $("textSheetTitle").textContent = title;
+    $("textSheetLabel").textContent = label;
+    $("textSheetInput").value = value || "";
+    openSheet("textSheet");
+    textSheetSave = save;
+    setTimeout(() => $("textSheetInput").focus(), 60);
+  }
+  function openConfirm({ title, text, okLabel, danger, action, alt = null }) {
+    $("confirmTitle").textContent = title;
+    $("confirmText").textContent = text;
+    $("confirmOk").textContent = okLabel || "OK";
+    $("confirmOk").className = danger ? "danger" : "save";
+    $("confirmAlt").textContent = alt?.label || "";
+    $("confirmAlt").classList.toggle("hidden", !alt);
+    openSheet("confirmSheet");
+    state.editingId = null;
+    confirmAction = action;
+    confirmAltAction = alt?.action || null;
+  }
+
+  /* ---------- settings actions ---------- */
+
+  function editName() {
+    openTextSheet({
+      title: "Your name",
+      label: "Shown to your household next to things you add",
+      value: myName(),
+      save: async value => {
+        const name = value.trim();
+        if (!name) return;
+        state.pendingName = name;
+        state.lastNameSynced = "";
+        syncMyName();
+        render();
+        try { await updateProfile(auth.currentUser, { displayName: name }); } catch (e) { console.warn(e); }
+      }
+    });
+  }
+
+  function renameHousehold() {
+    openTextSheet({
+      title: "Household name",
+      label: "Name",
+      value: state.household.name,
+      save: value => {
+        const name = value.trim();
+        if (!name) return;
+        updateDoc(householdRef(), { name }).catch(writeFailed);
+      }
+    });
+  }
+
+  function newInviteCode() {
+    const bytes = new Uint8Array(8);
+    crypto.getRandomValues(bytes);
+    return [...bytes].map(b => INVITE_ALPHABET[b % INVITE_ALPHABET.length]).join("");
+  }
+  function prettyCode(code) { return code.slice(0, 4) + "-" + code.slice(4); }
+
+  async function createInvite() {
+    const code = newInviteCode();
+    try {
+      await setDoc(doc(db, "invites", code), {
+        householdId: state.household.id,
+        createdBy: state.user.uid,
+        createdAt: serverTimestamp(),
+        expiresAt: Timestamp.fromDate(new Date(Date.now() + 7 * 86400000))
+      });
+      state.inviteCode = code;
+      $("inviteCode").textContent = prettyCode(code);
+      openSheet("inviteSheet");
+    } catch (error) {
+      console.error(error);
+      toast(navigator.onLine === false ? "You need to be online to create an invite." : friendlyDbError(error));
+    }
+  }
+
+  async function shareInvite() {
+    const link = location.origin + location.pathname;
+    const text = `Join our TidyNest household. Open ${link}, create an account, then enter invite code ${prettyCode(state.inviteCode)} (valid for 7 days).`;
+    try {
+      if (navigator.share) { await navigator.share({ text }); return; }
+      await navigator.clipboard.writeText(text);
+      toast("Invite copied");
+    } catch (error) {
+      if (error?.name !== "AbortError") toast("Couldn't copy. Read the code out instead.");
+    }
+  }
+
+  function askImportLocal() {
+    let localItems = [];
+    try { localItems = JSON.parse(localStorage.getItem(LEGACY_LOCAL_KEY) || "[]"); } catch {}
+    if (!Array.isArray(localItems) || !localItems.length) return toast("There's no old TidyNest data on this device.");
+    openConfirm({
+      title: "Import old data?",
+      text: `${localItems.length} item${localItems.length === 1 ? "" : "s"} saved on this device by an older version of TidyNest will be copied into your shared household.`,
+      okLabel: "Import",
+      action: async () => {
+        try {
+          const batch = writeBatch(db);
+          for (const old of localItems.slice(0, 400)) {
+            const when = new Date(old.date);
+            batch.set(doc(itemsRef()), {
+              title: String(old.title || "Imported item").slice(0, 200),
+              type: ["reminder", "calendar", "timer"].includes(old.type) ? old.type : "reminder",
+              date: (Number.isFinite(when.getTime()) ? when : new Date()).toISOString(),
+              notes: "",
+              shared: old.shared !== false,
+              done: false,
+              createdBy: state.user.uid,
+              createdByName: myName(),
+              createdByEmail: state.user.email || "",
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              comments: Array.isArray(old.comments) ? old.comments : []
+            });
+          }
+          await batch.commit();
+          try { localStorage.setItem(LEGACY_LOCAL_KEY + "-imported", "1"); } catch {}
+          toast("Imported");
+          render();
+        } catch (error) {
+          writeFailed(error);
+        }
+      }
+    });
+  }
+
+  /* ---------- due alerts ---------- */
+
+  // Remembered per account, so each person on each device gets their own alert once.
+  function alertedKey() { return "tidynest-alerted-" + (state.user?.uid || ""); }
+  function loadAlerted() {
+    try { return JSON.parse(localStorage.getItem(alertedKey()) || "[]"); } catch { return []; }
+  }
+  function isAlertable(item) {
+    if (item.type === "reminder") return !item.done && !item.allDay;   // a reminder for a day, with no time, has no moment to alert at
+    if (item.type === "calendar") return true;
+    // Only countdown timers alert, when they reach zero.
+    if (item.type === "timer") return timerMode(item) === "down";
+    return false;
+  }
+  function checkDue() {
+    if (!state.user || !state.loaded.shared || !state.loaded.priv) return;
+    const now = Date.now();
+    const alerted = loadAlerted();
+    let changed = false;
+    for (const item of state.items) {
+      const t = itemTime(item);
+      if (!Number.isFinite(t) || t > now || now - t > ALERT_WINDOW_MS || !isAlertable(item)) continue;
+      const key = item.id + "|" + item.date;
+      if (alerted.includes(key)) continue;
+      alerted.push(key);
+      changed = true;
+      raiseAlert(item, key);
+    }
+    if (changed) {
+      try { localStorage.setItem(alertedKey(), JSON.stringify(alerted.slice(-300))); } catch {}
+    }
+  }
+  // A due item only produces a notification from the phone itself, and only if Alerts is turned on in Settings.
+  function raiseAlert(item, key) {
+    if (notificationState() !== "granted") return;
+    const heading = item.type === "reminder" ? "Reminder" : item.type === "timer" ? "Timer finished" : "Starting now";
+    const options = { body: `${item.title}, ${formatTime(item.date)}`, tag: key, icon: "icon-192.png" };
+    const fallback = () => { try { new Notification(heading, options); } catch (e) { console.warn(e); } };
+    if (swRegistration) swRegistration.showNotification(heading, options).catch(fallback);
+    else fallback();
+  }
+  async function enableAlerts() {
+    try {
+      await Notification.requestPermission();
+    } catch (e) { console.warn(e); }
+    render();
+    if (notificationState() === "granted") toast("Alerts are on for this device");
+  }
+
+  /* ---------- events ---------- */
+
+  const actions = {
+    "auth-toggle": () => setAuthMode(authMode === "signin" ? "signup" : "signin"),
+    "auth-reset": () => sendReset(),
+    "create-household": () => createHousehold(),
+    "join-household": () => joinHousehold(),
+    "retry-household": () => { showScreen("loading"); findHousehold(); },
+    "sign-out": () => signOut(auth),
+    "view": el => showView(el.dataset.view),
+    "add-here": () => {
+      if (state.view === "calendar") {
+        const d = new Date(state.selectedDate);
+        d.setHours(9, 0, 0, 0);
+        openItem(null, { type: "calendar", date: d });
+      } else if (state.view === "reminders") openItem(null, { type: "reminder" });
+      else if (state.view === "timers") openItem(null, { type: "timer", mode: "down" });
+      else openItem(null, {});
+    },
+    "edit": el => openItem(el.dataset.id),
+    "edit-title": el => openItem(el.dataset.id),
+    "toggle": el => toggleFrom(el),
+    "save-item": () => saveItem(),
+    "pick-type": el => { form.typeTouched = true; pickType(el.dataset.type); },
+    "pick-repeat": el => pickRepeat(el.dataset.repeat),
+    "pick-memo": el => pickMemo(el.dataset.key),
+    "forget-memo": el => forgetMemo(el.dataset.key),
+    "pick-place": el => { $("itemPlace").value = el.dataset.place; hidePlaces(); },
+    "pick-mode": el => {
+      const mode = el.dataset.mode;
+      // "Count up" keeps whichever start was already picked; otherwise a new timer starts from now, a saved one from its own time
+      if (mode !== "count-up") form.mode = mode;
+      else if (form.mode === "down") form.mode = form.editing ? "up" : "upnow";
+      updateForm();
+    },
+    // each person's button switches them on or off; the last one left on stays on, so it's always for somebody
+    "pick-for": el => {
+      const uid = el.dataset.uid;
+      form.whoTouched = true;
+      if (!form.who.includes(uid)) form.who = [...form.who, uid];
+      else if (form.who.length > 1) form.who = form.who.filter(u => u !== uid);
+      updateForm();
+    },
+    "pick-share": el => { form.shared = el.dataset.share === "shared"; updateForm(); },
+    "flip-ampm": el => {
+      el.textContent = el.textContent === "pm" ? "am" : "pm";
+      if (el.dataset.for === "itemTime") return startChanged();
+      form.endSet = true;
+      updateForm();
+    },
+    "quick-date": el => { $("itemDate").value = dayKey(addDays(new Date(), Number(el.dataset.days) || 0)); startChanged(); },
+    "delete-item": () => askDeleteItem(),
+    "ack": el => acknowledgeFrom(el),
+    "ack-all": () => acknowledgeAll(),
+    "chat": el => openChat(el.dataset.id),
+    "chat-send": () => sendChat(),
+    "clear-done": () => askClearDone(),
+    "toggle-done-list": () => { state.showDone = !state.showDone; render(); },
+    "close-sheet": () => closeSheets(),
+    "text-save": () => { const fn = textSheetSave; const v = $("textSheetInput").value; closeSheets(); if (fn) fn(v); },
+    "confirm-ok": () => { const fn = confirmAction; closeSheets(); if (fn) fn(); },
+    "confirm-alt": () => { const fn = confirmAltAction; closeSheets(); if (fn) fn(); },
+    "cal-prev": () => { state.calMonth = new Date(state.calMonth.getFullYear(), state.calMonth.getMonth() - 1, 1); renderCalendar(); },
+    "cal-next": () => { state.calMonth = new Date(state.calMonth.getFullYear(), state.calMonth.getMonth() + 1, 1); renderCalendar(); },
+    "cal-today": () => { state.selectedDate = startOfDay(new Date()); state.calMonth = startOfMonth(new Date()); renderCalendar(); },
+    "cal-day": el => {
+      const [y, m, d] = el.dataset.day.split("-").map(Number);
+      state.selectedDate = new Date(y, m - 1, d);
+      state.calMonth = new Date(y, m - 1, 1);
+      renderCalendar();
+    },
+    "edit-name": () => editName(),
+    "pick-colour": el => pickColour(el.dataset.colour),
+    "rename-household": () => renameHousehold(),
+    "invite": () => createInvite(),
+    "share-invite": () => shareInvite(),
+    "import-local": () => askImportLocal(),
+    "enable-alerts": () => enableAlerts()
+  };
+
+  document.addEventListener("click", event => {
+    const el = event.target.closest("[data-action]");
+    if (el) {
+      const fn = actions[el.dataset.action];
+      if (fn) fn(el);
+      return;
+    }
+    if (event.target === $("backdrop")) closeSheets();
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && $("backdrop").classList.contains("open")) return closeSheets();
+    if (event.key !== "Enter") return;
+    const id = event.target.id;
+    if (id === "itemTitle") saveItem();
+    else if (id === "itemPlace") { hidePlaces(); event.target.blur(); }
+    else if (id === "chatInput") sendChat();
+    else if (id === "textSheetInput") actions["text-save"]();
+    else if (id === "joinCode") joinHousehold();
+    else if (id === "householdName") createHousehold();
+  });
+
+  document.addEventListener("input", event => {
+    if (event.target.id === "itemPlace") placeTyped();
+    else if (event.target.id === "itemTitle") titleTyped();
+    else if (event.target.id === "itemNotes") fitNotes();
+  });
+
+  // moving on to another field puts the title suggestions away
+  $("itemSheet").addEventListener("focusin", event => {
+    if (event.target.id !== "itemTitle" && !event.target.closest("#memoList")) hideMemo();
+  });
+
+  document.addEventListener("change", event => {
+    const id = event.target.id;
+    if (id === "itemDate" || id === "itemTimeH" || id === "itemTimeM") startChanged();
+    else if (id === "itemAllDay") allDayChanged();
+    else if (id === "remDate") { form.hasDate = $("remDate").checked; updateForm(); }
+    else if (id === "remTime") remTimeChanged();
+    else if (id === "remEnd") remEndChanged();
+    else if (id === "repeatEvery" || id === "repeatUnit") { form.repeat = { every: Number($("repeatEvery").value) || 1, unit: $("repeatUnit").value }; updateForm(); }
+    else if (id === "itemEndDate" || id === "itemEndTimeH" || id === "itemEndTimeM") { form.endSet = true; updateForm(); }
+  });
+
+  window.addEventListener("online", renderSync);
+  window.addEventListener("offline", renderSync);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && state.user && state.household) { render(); checkDue(); }
+  });
+
+  // Keep countdowns, "overdue" labels and due alerts current.
+  setInterval(() => {
+    if (!state.user || !state.household) return;
+    checkDue();
+    const typing = $("backdrop").classList.contains("open");
+    if (!typing) render();
+  }, 20000);
+
+  setInterval(() => { if (state.user && state.household && !document.hidden) tickTimers(); }, 1000);
+
+  if (window.__tidynestSw) window.__tidynestSw.then(reg => { swRegistration = reg; });
+</script>
+</body>
+</html>
