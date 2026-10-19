@@ -1,0 +1,50 @@
+# Puts TidyNest's notification functions and database rules live on Firebase.
+# It runs by itself whenever something in functions/, firestore.rules or firebase.json is uploaded,
+# and can be run by hand from the Actions tab ("Deploy notifications" -> "Run workflow").
+# It needs one secret: FIREBASE_SERVICE_ACCOUNT (Settings -> Secrets and variables -> Actions).
+
+name: Deploy notifications
+
+on:
+  push:
+    branches: [ "main" ]
+    paths: [ "functions/**", "firestore.rules", "firebase.json", ".github/workflows/firebase.yml" ]
+  workflow_dispatch:
+
+concurrency: firebase-deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Sign in to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      # The functions have to run in the same place as the database.
+      - name: Find where the database is
+        run: |
+          loc=$(gcloud firestore databases describe --database='(default)' --project home-sort-76dab --format='value(locationId)')
+          case "$loc" in
+            nam5) region=us-central1 ;;
+            eur3) region=europe-west1 ;;
+            *) region="$loc" ;;
+          esac
+          echo "The database is in $loc, so the functions go in $region"
+          echo "TIDYNEST_REGION=$region" > functions/.env
+
+      - name: Install
+        working-directory: functions
+        run: npm ci
+
+      - name: Deploy
+        run: npx --yes firebase-tools@15 deploy --only functions,firestore:rules --project home-sort-76dab --force --non-interactive
