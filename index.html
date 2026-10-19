@@ -592,6 +592,12 @@
     #itemSheet .seg.repeat button{font-size:12.5px;padding:5px 2px}
     @media (max-width: 350px){#itemSheet .seg.repeat{gap:4px}#itemSheet .seg.repeat button{font-size:11px;letter-spacing:-.2px}}
     .repeat-custom{display:grid;grid-template-columns:auto minmax(0,.7fr) minmax(0,1.3fr);align-items:center;gap:6px;margin-top:6px;font-size:13px;font-weight:700;color:var(--muted)}
+    /* the alert sits in the When card's heading, as a small pill: a bell and what it's set to */
+    .alert-pill{position:relative;display:inline-flex;align-items:center;margin:0 0 0 auto;border:1.5px solid var(--line-strong);border-radius:999px;background:var(--field);color:var(--text);min-width:0}
+    .alert-pill.off{color:var(--muted)}
+    .alert-ic{position:absolute;left:9px;top:50%;transform:translateY(-50%);display:inline-flex;width:15px;height:15px;pointer-events:none}.alert-ic svg{width:15px;height:15px}
+    #itemAlert{appearance:none;-webkit-appearance:none;border:0;background:transparent;min-height:30px;max-width:175px;padding:0 26px 0 28px;font:inherit;font-size:13px;font-weight:700;color:inherit;text-overflow:ellipsis}
+    .alert-pill::after{content:"";position:absolute;right:11px;top:50%;width:5px;height:5px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-75%) rotate(45deg);pointer-events:none}
     .repeat-custom select{min-height:44px;padding:0 10px;border-radius:12px;font-weight:600;color:var(--text)}
     .people{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
     .people.stack{grid-template-columns:minmax(0,1fr)}
@@ -933,6 +939,7 @@
       <section id="whenCard" class="fcard">
         <div class="fhead">
           <h3 id="whenTitle">When</h3>
+          <label id="alertRow" class="alert-pill"><span class="alert-ic" data-ic="bell"></span><select id="itemAlert" aria-label="Alert"></select></label>
           <label id="allDayRow" class="switch-row hidden"><span>All day</span><input id="itemAllDay" type="checkbox" class="switch"></label>
         </div>
         <div id="timerModeWrap" class="hidden">
@@ -1088,7 +1095,7 @@
     onSnapshot, query, where, limit, serverTimestamp, arrayUnion, arrayRemove, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-  const VERSION = "0.99";
+  const VERSION = "1.00";
   // the computer layout (side menu): must match the @media rule in the styles
   const WIDE = window.matchMedia("(min-width: 900px) and (hover: hover) and (pointer: fine)");
   WIDE.addEventListener?.("change", () => state.user && state.household && render());
@@ -1302,6 +1309,7 @@
     return d.toLocaleTimeString([], { hour:"numeric", minute:"2-digit" });
   }
   const ICONS = {
+    bell: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6a5.6 5.6 0 0 0-5.6 5.6c0 4.6-1.9 6-2.1 7.8h15.4c-.2-1.8-2.1-3.2-2.1-7.8A5.6 5.6 0 0 0 12 3.6z"/><path d="M10 19.8a2.1 2.1 0 0 0 4 0"/></svg>',
     calendar: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="M7.5 13.3h9M7.5 16.9h5.5"/></svg>',
     timer: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V9.8M10 3.2h4M12 3.2v3.3M17.6 7.4l1.3-1.3"/></svg>',
     check: '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.6 4.6 4.6L19 7.6" stroke-width="2.6"/></svg>',
@@ -2506,6 +2514,32 @@
     return Number.isFinite(d.getTime()) ? d : null;
   }
   // No clock time: an all-day event, or a reminder that has a date but its Time switched off.
+  // Alerts: how long before an event or reminder starts its alert goes off (sent as a push by the notification
+  // functions, or shown by the app itself while it's open). Saved on the item as `alert`, in minutes before the start:
+  // false for none. Something for a whole day starts at midnight, so its choices are 9 am on the day (-540: nine hours
+  // after) or 9 am the day before (900: fifteen hours before). Things saved before alerts could be chosen go off at
+  // their time, or not at all if they're for a whole day.
+  // [value, what the choice says, what the details page says]
+  const ALERT_TIMED = [["none", "No alert", ""], ["0", "At the time", "At the time"], ["5", "5 min before", "5 minutes before"], ["15", "15 min before", "15 minutes before"], ["30", "30 min before", "30 minutes before"], ["60", "1 hr before", "1 hour before"], ["120", "2 hrs before", "2 hours before"], ["1440", "1 day before", "1 day before"]];
+  const ALERT_DAY = [["none", "No alert", ""], ["-540", "9 am on the day", "9 am on the day"], ["900", "9 am day before", "9 am the day before"]];
+  function alertOf(item) {
+    if (item.alert === false) return null;
+    if (typeof item.alert === "number") return item.alert;
+    return item.allDay ? null : 0;
+  }
+  function alertLabel(item) {
+    const a = alertOf(item);
+    if (a === null) return "";
+    return (item.allDay ? ALERT_DAY : ALERT_TIMED).find(([v]) => v !== "none" && Number(v) === a)?.[2] || `${spanWords(Math.abs(a))} ${a < 0 ? "after the start" : "before"}`;
+  }
+  // when it goes off (NaN for never)
+  function alertTime(item) {
+    if (item.listItem) return NaN;
+    if (item.type === "timer") return timerMode(item) === "down" ? itemTime(item) : NaN;
+    if (item.type === "reminder" && item.done) return NaN;
+    const t = itemTime(item), a = alertOf(item);
+    return Number.isFinite(t) && a !== null ? t - a * 60000 : NaN;
+  }
   function isAllDay() {
     return form.type === "calendar" ? $("itemAllDay").checked : form.type === "reminder" && form.hasDate && !form.hasTime;
   }
@@ -2557,6 +2591,9 @@
     form.hasDate = item ? item.type !== "reminder" || Number.isFinite(itemTime(item)) : form.dateGiven;
     form.hasTime = item ? !item.allDay : false;
     form.hasEnd = form.endSet;
+    // a new event or reminder alerts at its time (or not at all, for a whole day) until something else is picked
+    form.alert = item && (item.type === "calendar" || item.type === "reminder") ? (alertOf(item) === null ? "none" : String(alertOf(item))) : "";
+    form.alertPicked = !!form.alert;
     setWhen("itemDate", "itemTime", start);
     setWhen("itemEndDate", "itemEndTime", end);
     form.lastStart = readWhen("itemDate", "itemTime")?.getTime() ?? NaN;
@@ -2696,6 +2733,17 @@
 
     // repeating: weekly, fortnightly, monthly, or "every so many days / weeks / months / years"
     $("repeatWrap").classList.toggle("hidden", isTimer || noDate);
+
+    // the alert: choices to the minute for something with a time, or 9 am on / before the day for a whole day
+    $("alertRow").classList.toggle("hidden", isTimer || noDate);
+    if (!isTimer && !noDate) {
+      const choices = allDay ? ALERT_DAY : ALERT_TIMED;
+      if (!form.alertPicked || !choices.some(([v]) => v === form.alert)) form.alert = allDay ? "none" : "0";
+      const html = choices.map(([v, label]) => `<option value="${v}">${label}</option>`).join("");
+      if ($("itemAlert").dataset.set !== (allDay ? "day" : "timed")) { $("itemAlert").innerHTML = html; $("itemAlert").dataset.set = allDay ? "day" : "timed"; }
+      $("itemAlert").value = form.alert;
+      $("alertRow").classList.toggle("off", form.alert === "none");
+    }
 
     // reminders only: which category it's in, and whether a dated one also shows on the calendar
     // (a private category is only offered for a reminder this person added, as nobody else can make it private)
@@ -2862,6 +2910,7 @@
       updatedAt: serverTimestamp()
     };
     if (type === "timer") base.timerMode = mode === "down" ? "down" : "up";
+    else base.alert = dateless || form.alert === "none" || !form.alert ? false : Number(form.alert);
     if (isEvent) { base.end = end.toISOString(); base.allDay = allDay; }
     else if (isRem) {
       base.category = form.category || "";
@@ -2980,6 +3029,7 @@
         title: template.title, type: template.type, date: new Date(at).toISOString(), allDay: !!template.allDay,
         notes: template.notes || "", location: template.location || "", assignedTo: ownersOf(template), shared: !!template.shared,
         category: template.category || "", offCalendar: !!template.offCalendar,
+        ...(template.type !== "timer" && template.alert !== undefined ? { alert: template.alert } : {}),
         done: false, repeat: rule, seriesId, seriesStart: new Date(start).toISOString(), seriesK: k,
         ackBy: Array.isArray(template.ackBy) ? template.ackBy : [],
         createdBy: uid, createdByName: myName(), createdByEmail: state.user.email || "",
@@ -4564,7 +4614,8 @@
         time = sameDay ? `${escapeHtml(formatTime(item.date))} – ${escapeHtml(formatTime(item.end))} <span>· ${durationText(e - t)}</span>`
           : `${escapeHtml(formatTime(item.date))} until ${escapeHtml(formatDay(end))}, ${escapeHtml(formatTime(item.end))} <span>· ${durationText(e - t)}</span>`;
       } else time = escapeHtml(formatTime(item.date));
-      const extras = [until ? `<span class="until ${untilClass}">${until}</span>` : "", late, rule ? `<span class="repeats">${ICONS.repeat}${repeatText(rule)}</span>` : ""].filter(Boolean).join("");
+      const extras = [until ? `<span class="until ${untilClass}">${until}</span>` : "", late, rule ? `<span class="repeats">${ICONS.repeat}${repeatText(rule)}</span>` : "",
+        item.type !== "timer" && alertLabel(item) ? `<span class="repeats">${ICONS.bell}Alert: ${escapeHtml(alertLabel(item).replace(/^./, c => c.toLowerCase()))}</span>` : ""].filter(Boolean).join("");
       when = `<div class="v-card"><div class="v-day">${escapeHtml(day)}</div>${time ? `<div class="v-time">${time}</div>` : ""}${extras ? `<div class="v-line">${extras}</div>` : ""}</div>`;
     }
     const done = item.type === "reminder"
@@ -4768,9 +4819,9 @@
     const alerted = loadAlerted();
     let changed = false;
     for (const item of state.items) {
-      const t = itemTime(item);
-      if (!Number.isFinite(t) || t > now || now - t > ALERT_WINDOW_MS || !isAlertable(item)) continue;
-      const key = item.id + "|" + item.date;
+      const t = alertTime(item);
+      if (!Number.isFinite(t) || t > now || now - t > ALERT_WINDOW_MS) continue;
+      const key = item.id + "|" + item.date + "|" + alertOf(item);
       if (alerted.includes(key)) continue;
       alerted.push(key);
       changed = true;
@@ -4783,8 +4834,10 @@
   // A due item only produces a notification from the phone itself, and only if Alerts is turned on in Settings.
   function raiseAlert(item, key) {
     if (notificationState() !== "granted" || pushOn()) return;   // with push on, the alert comes as a push
-    const heading = item.type === "reminder" ? "Reminder" : item.type === "timer" ? "Timer finished" : "Starting now";
-    const options = { body: `${item.title}, ${formatTime(item.date)}`, tag: key, icon: "icon-192.png" };
+    const ahead = item.type === "timer" ? 0 : alertOf(item) || 0;
+    const heading = item.type === "reminder" ? "Reminder" : item.type === "timer" ? "Timer finished" : ahead > 0 || item.allDay ? "Coming up" : "Starting now";
+    const body = item.allDay ? `${ahead > 0 ? "Tomorrow" : "Today"}: ${item.title}` : ahead > 0 ? `${item.title}, ${formatTime(item.date)} (in ${spanWords(ahead)})` : `${item.title}, ${formatTime(item.date)}`;
+    const options = { body, tag: key, icon: "icon-192.png" };
     const fallback = () => { try { new Notification(heading, options); } catch (e) { console.warn(e); } };
     if (swRegistration) swRegistration.showNotification(heading, options).catch(fallback);
     else fallback();
@@ -5131,6 +5184,7 @@
     else if (id === "remDate") { form.hasDate = $("remDate").checked; updateForm(); }
     else if (id === "remTime") remTimeChanged();
     else if (id === "remEnd") remEndChanged();
+    else if (id === "itemAlert") { form.alert = $("itemAlert").value; form.alertPicked = true; $("alertRow").classList.toggle("off", form.alert === "none"); }
     else if (id === "repeatEvery" || id === "repeatUnit") { form.repeat = { every: Number($("repeatEvery").value) || 1, unit: $("repeatUnit").value }; updateForm(); }
     else if (id === "itemEndDate" || id === "itemEndTimeH" || id === "itemEndTimeM") { form.endSet = true; updateForm(); }
   });
