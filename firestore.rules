@@ -1,13 +1,17 @@
 rules_version = '2';
 
 // TidyNest security rules.
-// Paste this whole file into Firebase console -> Firestore Database -> Rules, then Publish.
+// These go live by themselves when this file is uploaded to GitHub (the "Deploy notifications" action),
+// the same way as the notification functions. (Pasting into Firebase console -> Firestore Database -> Rules works too.)
 //
 // What it enforces:
 //  - You must be signed in to do anything.
 //  - A household can only be read or changed by the people in its "members" list.
 //  - The only way onto a members list is a valid, unexpired invite code made by an existing member.
 //  - Shared items are visible to the whole household. Private items are visible only to whoever made them.
+//  - Each phone with notifications on is saved under its household; only its own person can see or change it.
+//  - The notification keys: the public half is readable by anyone signed in; everything else in config,
+//    and the record of what's been sent (pushSent), is only for the notification functions.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -87,6 +91,23 @@ service cloud.firestore {
 
         allow delete: if isMember(hid) && canSee(resource.data);
       }
+
+      // The phones that get push notifications: one record per phone, belonging to whoever turned it on.
+      match /push/{phoneId} {
+        allow get: if isMember(hid) && resource.data.uid == request.auth.uid;
+        allow list: if false;
+        allow create, update: if isMember(hid)
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.endpoint is string
+          && request.resource.data.endpoint.matches('https://.*')
+          && (resource == null || resource.data.uid == request.auth.uid);
+        allow delete: if isMember(hid) && resource.data.uid == request.auth.uid;
+      }
+    }
+
+    // The public key phones need to sign up for notifications.
+    match /config/push {
+      allow get: if signedIn();
     }
 
     // Invite codes. The code itself is the secret: you can look one up if you know it,

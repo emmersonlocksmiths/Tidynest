@@ -1088,7 +1088,7 @@
     onSnapshot, query, where, limit, serverTimestamp, arrayUnion, arrayRemove, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-  const VERSION = "0.98";
+  const VERSION = "0.99";
   // the computer layout (side menu): must match the @media rule in the styles
   const WIDE = window.matchMedia("(min-width: 900px) and (hover: hover) and (pointer: fine)");
   WIDE.addEventListener?.("change", () => state.user && state.household && render());
@@ -1704,6 +1704,8 @@
     rememberItems();
     extendSeries();
     announceNews();
+    openLinkedItem();
+    checkPush();
   }
 
   // When someone else adds, changes or messages about something, a banner drops down to say so (and the phone
@@ -1724,7 +1726,7 @@
     const line = last.lastChange?.kind === "chat" ? `“${last.lastChange.text || ""}”` : `${capital(changeSaid(last, true))}: ${last.title}`;
     const heading = fresh.length > 1 ? `${by} and ${fresh.length - 1} more update${fresh.length === 2 ? "" : "s"}` : last.lastChange?.kind === "chat" ? `${by} · ${last.title}` : by;
     showNews(heading, line, last);
-    if (document.hidden && notificationState() === "granted") {
+    if (document.hidden && notificationState() === "granted" && !pushOn()) {   // (with push on, the push brings it)
       const options = { body: `${heading.includes(last.title) ? "" : last.title + " — "}${line}`, tag: "news-" + last.id, icon: "icon-192.png" };
       const fallback = () => { try { new Notification(heading, options); } catch (e) { console.warn(e); } };
       if (swRegistration) swRegistration.showNotification(heading, options).catch(fallback);
@@ -4220,13 +4222,7 @@
         `${theirs ? escapeHtml(ownerName.charAt(0).toUpperCase()) : mine ? "✓" : ""}</button>`;
     }).join("");
 
-    const notif = notificationState();
-    const notifHtml = {
-      unsupported: `<span class="small">Not available in this browser. On iPhone, add TidyNest to your Home Screen first.</span>`,
-      default: `<span class="small">Off</span><button data-action="enable-alerts">Turn on</button>`,
-      granted: `<span class="small">On while TidyNest is open on this device</span>`,
-      denied: `<span class="small">Blocked in this browser's settings</span>`
-    }[notif];
+    const notifHtml = pushSettingHtml();
 
     const standalone = window.matchMedia?.("(display-mode: standalone)").matches || navigator.standalone === true;
     const legacyCount = hasLegacyLocalData();
@@ -4241,7 +4237,7 @@
       ${holidaySettingsHtml()}
       ${state.view === "settings" ? dataUsageHtml() : ""}
       <div class="settings-row"><span>Sync</span><span class="val"><span id="syncStatus" class="status"></span></span></div>
-      <div class="settings-row"><span>Phone alerts</span><span class="val">${notifHtml}</span></div>
+      <div class="settings-row"><span>Notifications<br><span class="small" style="font-weight:500">Even when TidyNest is closed</span></span><span class="val">${notifHtml}</span></div>
       ${standalone ? "" : `<div class="settings-row"><span>Install</span><span class="val"><span class="small">Use your browser's Share or menu button, then “Add to Home Screen”.</span></span></div>`}
       ${legacyCount ? `<div class="settings-row"><span>Old data on this device</span><span class="val"><span class="small">${legacyCount} item${legacyCount === 1 ? "" : "s"}</span><button data-action="import-local">Import</button></span></div>` : ""}
       <div class="settings-row"><span>Tidy-up</span><span class="val"><span class="small">Events are removed 5 years after they happen. Ticked-off reminders go to the Archive after a day, and are removed 5 years after they're ticked off.</span></span></div>
@@ -4786,13 +4782,129 @@
   }
   // A due item only produces a notification from the phone itself, and only if Alerts is turned on in Settings.
   function raiseAlert(item, key) {
-    if (notificationState() !== "granted") return;
+    if (notificationState() !== "granted" || pushOn()) return;   // with push on, the alert comes as a push
     const heading = item.type === "reminder" ? "Reminder" : item.type === "timer" ? "Timer finished" : "Starting now";
     const options = { body: `${item.title}, ${formatTime(item.date)}`, tag: key, icon: "icon-192.png" };
     const fallback = () => { try { new Notification(heading, options); } catch (e) { console.warn(e); } };
     if (swRegistration) swRegistration.showNotification(heading, options).catch(fallback);
     else fallback();
   }
+  /* ---------- push notifications ----------
+     With this on, the phone gets a notification even when TidyNest is closed: when the other person adds, changes
+     or writes about something shared, and when a reminder, event or countdown is due for you. They're sent by the
+     notification functions on Firebase (functions/ in the repo); this side signs the phone up for them.
+     Each phone is saved at households/{id}/push/{phone}, and this device remembers that it's on. */
+  const PUSH_KEY = "tidynest-push";
+  const pushSupported = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isStandalone = () => window.matchMedia?.("(display-mode: standalone)").matches || navigator.standalone === true;
+  function pushSaved() {
+    try { return JSON.parse(localStorage.getItem(PUSH_KEY) || "null"); } catch (e) { return null; }
+  }
+  // on for this device, for whoever's signed in now
+  function pushOn() {
+    const saved = pushSaved();
+    return !!saved && !!state.user && saved.uid === state.user.uid && saved.hid === state.household?.id && notificationState() === "granted";
+  }
+  function pushSettingHtml() {
+    if (state.pushBusy) return `<span class="small">Setting up…</span>`;
+    if (!pushSupported()) {
+      return isIOS() && !isStandalone()
+        ? `<span class="small">Add TidyNest to your Home Screen (Share, then “Add to Home Screen”), then turn this on from there.</span>`
+        : `<span class="small">Not available in this browser.</span>`;
+    }
+    if (notificationState() === "denied") return `<span class="small">Blocked. Allow notifications for TidyNest in ${isIOS() ? "the iPhone's Settings, under Notifications" : "this browser's site settings"}.</span>`;
+    if (pushOn()) return `<span class="small">On for this ${isIOS() ? "phone" : "device"}</span><button data-action="push-off">Turn off</button>`;
+    return `<span class="small">Off</span><button data-action="push-on">Turn on</button>`;
+  }
+  function base64ToBytes(text) {
+    const padded = (text + "===".slice((text.length + 3) % 4)).replace(/-/g, "+").replace(/_/g, "/");
+    return Uint8Array.from(atob(padded), c => c.charCodeAt(0));
+  }
+  async function phoneId(endpoint) {
+    const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(endpoint));
+    return [...new Uint8Array(hash)].slice(0, 20).map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+  function deviceName() {
+    const ua = navigator.userAgent;
+    return /iPhone/.test(ua) ? "iPhone" : /iPad/.test(ua) ? "iPad" : /Android/.test(ua) ? "Android" : /Mac/.test(ua) ? "Mac" : /Windows/.test(ua) ? "Windows" : "Computer";
+  }
+  // signs this device up (or checks it's still signed up) and saves it under the household
+  async function savePushPhone(publicKey) {
+    const reg = swRegistration || await navigator.serviceWorker.ready;
+    const key = base64ToBytes(publicKey);
+    let sub = await reg.pushManager.getSubscription();
+    const current = sub?.options?.applicationServerKey;
+    if (sub && current && new Uint8Array(current).join() !== key.join()) { await sub.unsubscribe().catch(() => {}); sub = null; }
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+    const json = sub.toJSON();
+    const id = await phoneId(json.endpoint);
+    const saved = pushSaved();
+    if (saved && saved.id !== id && saved.hid === state.household.id) await deleteDoc(doc(db, "households", saved.hid, "push", saved.id)).catch(() => {});
+    await setDoc(doc(db, "households", state.household.id, "push", id), {
+      uid: state.user.uid, endpoint: json.endpoint, keys: json.keys, device: deviceName(), savedAt: serverTimestamp()
+    });
+    try { localStorage.setItem(PUSH_KEY, JSON.stringify({ uid: state.user.uid, hid: state.household.id, id })); } catch (e) {}
+  }
+  async function turnPushOn() {
+    if (state.pushBusy) return;
+    let permission = "default";
+    try { permission = await Notification.requestPermission(); } catch (e) { console.warn(e); }   // (has to come straight from the tap)
+    if (permission !== "granted") { render(); return; }
+    state.pushBusy = true; render();
+    try {
+      const config = await getDoc(doc(db, "config", "push"));
+      if (!config.exists() || !config.data().publicKey) { toast("Notifications aren't set up on Firebase yet"); return; }
+      await savePushPhone(config.data().publicKey);
+      toast("Notifications are on for this " + (isIOS() ? "phone" : "device"));
+    } catch (e) {
+      console.warn(e);
+      toast("Couldn't turn notifications on. Check you're online and try again.");
+    } finally {
+      state.pushBusy = false; render();
+    }
+  }
+  async function turnPushOff(quiet = false) {
+    const saved = pushSaved();
+    try { localStorage.removeItem(PUSH_KEY); } catch (e) {}
+    if (!quiet) render();
+    try {
+      const reg = swRegistration || (pushSupported() ? await navigator.serviceWorker.ready : null);
+      const sub = await reg?.pushManager.getSubscription();
+      if (sub) await sub.unsubscribe();
+    } catch (e) { console.warn(e); }
+    if (saved) await deleteDoc(doc(db, "households", saved.hid, "push", saved.id)).catch(e => console.warn(e));
+    if (!quiet) toast("Notifications are off for this " + (isIOS() ? "phone" : "device"));
+  }
+  // each time the app opens: make sure a device that's on is still signed up (the phone can renew it)
+  let pushChecked = false;
+  async function checkPush() {
+    if (pushChecked || !state.user || !state.household) return;
+    pushChecked = true;
+    const saved = pushSaved();
+    if (!saved) return;
+    if (saved.uid !== state.user.uid || notificationState() !== "granted" || !pushSupported()) { if (saved.uid !== state.user.uid || notificationState() === "denied") try { localStorage.removeItem(PUSH_KEY); } catch (e) {} return; }
+    try {
+      const config = await getDoc(doc(db, "config", "push"));
+      if (config.exists() && config.data().publicKey) await savePushPhone(config.data().publicKey);
+    } catch (e) { console.warn(e); }
+  }
+  // Tapping a notification opens TidyNest at the thing it's about: ?item= when it starts, or a message
+  // from the service worker when TidyNest was already open in the background.
+  let linkedItem = new URLSearchParams(location.search).get("item") || "";
+  function openLinkedItem() {
+    if (!linkedItem || !state.loaded.shared || !state.loaded.priv) return;
+    const id = linkedItem;
+    linkedItem = "";
+    try { history.replaceState(null, "", location.pathname); } catch (e) {}
+    if (findItem(id)) { closeSheets(); openView(id); }
+  }
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.addEventListener("message", event => {
+      if (event.data?.type === "open-item" && event.data.id) { linkedItem = event.data.id; openLinkedItem(); }
+    });
+  }
+
   async function enableAlerts() {
     try {
       await Notification.requestPermission();
@@ -4810,7 +4922,9 @@
     "create-household": () => createHousehold(),
     "join-household": () => joinHousehold(),
     "retry-household": () => { showScreen("loading"); findHousehold(); },
-    "sign-out": () => signOut(auth),
+    "sign-out": async () => { if (pushOn()) await turnPushOff(true); signOut(auth); },
+    "push-on": () => turnPushOn(),
+    "push-off": () => turnPushOff(),
     "view": el => showView(el.dataset.view),
     "add-here": () => {
       if (state.view === "calendar") {
