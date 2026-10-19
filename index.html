@@ -798,11 +798,11 @@
             </div>
             <div id="doneSection" class="section hidden">
               <button id="doneToggle" class="fold" data-action="toggle-done-list" aria-expanded="false" aria-controls="doneBox">
-                <span>Completed reminders</span><span id="doneCount" class="fold-count"></span>
+                <span>Archive</span><span id="doneCount" class="fold-count"></span>
                 <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9.5 6 6 6-6" stroke-width="2.2"/></svg>
               </button>
               <div id="doneBox" class="hidden">
-                <div class="section-title fold-note"><span class="small">Kept for 5 years after they're ticked off, then removed.</span></div>
+                <div class="section-title fold-note"><span class="small">Reminders move here a day after they're ticked off. Kept for 5 years, then removed.</span></div>
                 <div id="doneList" class="card list"></div>
               </div>
             </div>
@@ -1042,7 +1042,7 @@
     onSnapshot, query, where, limit, serverTimestamp, arrayUnion, arrayRemove, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-  const VERSION = "0.95";
+  const VERSION = "0.96";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAtOSr0yNRMh26de_1OHx4wl7ylUjlqACo",
@@ -1198,6 +1198,14 @@
     const d = new Date(Date.now() + 3600000);
     d.setMinutes(0, 0, 0);
     return d;
+  }
+  // A ticked-off reminder stays in view, crossed off, for a day; after that it's archived: out of the lists and Home,
+  // but still kept (and counted on the Stats page) until the 5-year tidy-up. One with no tick time saved yet has only just been ticked.
+  const ARCHIVE_AFTER_MS = 24 * 60 * 60 * 1000;
+  function archived(item, now = Date.now()) {
+    if (item.type !== "reminder" || !item.done) return false;
+    const at = dateValue(item.doneAt);
+    return !!at && now - at >= ARCHIVE_AFTER_MS;
   }
   function dateValue(value) {
     if (!value) return 0;
@@ -3645,6 +3653,7 @@
     const todayKey = dayKey(now);
     const todayStart = startOfDay(now).getTime();
     const items = state.items.filter(i => !i.listItem);   // the things on lists only show on their list
+    const current = items.filter(i => !archived(i));        // Home leaves out reminders ticked off more than a day ago
 
     const overdue = items.filter(i => i.type === "reminder" && !i.done && itemEnd(i) < todayStart).sort(byDate);
     $("overdueSection").classList.toggle("hidden", !overdue.length);
@@ -3653,7 +3662,7 @@
     // Today: anything dated today, plus events that started earlier and are still running
     const tomorrowStart = addDays(startOfDay(now), 1).getTime();
     // Today: anything dated today, plus events that started earlier and are still running
-    const today = items.filter(i => itemDayKeys(i).includes(todayKey)).sort(byDate);
+    const today = current.filter(i => itemDayKeys(i).includes(todayKey)).sort(byDate);
     list("todayList", underTheirEvent(today), renderHomeWithLinks, "Nothing scheduled for today.");
     const todayHols = holidaysOn(todayKey);
     if (todayHols.length) $("todayList").innerHTML = todayHols.map(h => holidayRow(h)).join("") + (today.length ? $("todayList").innerHTML : "");
@@ -3665,7 +3674,7 @@
     // takes its place. The rest of its dates are in the calendar.
     const soonEnd = addDays(startOfDay(now), 4).getTime();
     const nextShown = new Set();
-    const ahead = items
+    const ahead = current
       .filter(i => itemTime(i) >= tomorrowStart && !(i.type === "timer" && timerMode(i) === "up"))
       .sort(byDate)
       .filter(i => !i.seriesId || (!i.done && !nextShown.has(i.seriesId) && !!nextShown.add(i.seriesId)));
@@ -3756,17 +3765,21 @@
     else listDrawn = "";
     const viewName = openCat ? openCat.name : "";
     // An event's reminders are kept together in one box headed with the event's name (tap the heading to open the event).
-    const showing = openCat && !listOpen ? open.filter(inView) : [];
+    // Ones ticked off in the last day stay at the bottom, crossed off, under "Ticked off", until they're archived.
+    const ticked = openCat && !listOpen ? items.filter(i => i.type === "reminder" && i.done && !archived(i) && inView(i))
+      .sort((a, b) => (dateValue(b.doneAt) || Infinity) - (dateValue(a.doneAt) || Infinity)) : [];
+    const showing = openCat && !listOpen ? open.filter(inView).concat(ticked) : [];
     // grouped like Home: no date first, then Overdue, Today, Coming up (the next 3 days) and Later.
     // The headings only appear when there's more than one group.
     const groupOf = i => {
+      if (i.done) return "ticked";
       const t = itemTime(i);
       if (!Number.isFinite(t)) return "none";
       if (itemEnd(i) < todayStart) return "overdue";
       if (t < tomorrowStart) return "today";
       return t < soonEnd ? "soon" : "later";
     };
-    const GROUPS = [["none", "No date"], ["overdue", "Overdue"], ["today", "Today"], ["soon", "Coming up"], ["later", "Later"]];
+    const GROUPS = [["none", "No date"], ["overdue", "Overdue"], ["today", "Today"], ["soon", "Coming up"], ["later", "Later"], ["ticked", "Ticked off"]];
     const used = GROUPS.filter(([g]) => showing.some(i => groupOf(i) === g));
     $("reminderList").innerHTML = used.map(([g, name]) => {
       const rows = showing.filter(i => groupOf(i) === g), rowIds = new Set(rows.map(i => i.id)), boxed = new Set();
@@ -3779,7 +3792,7 @@
         return `<div class="bundle"><button class="bundle-head" data-action="open" data-id="${escapeHtml(parent.id)}">${ICONS.link}<span>${forLabel(parent)}${day}</span></button>${linkedTo(parent.id).filter(x => rowIds.has(x.id)).map(x => renderItem(x, false, true)).join("")}</div>`;
       }).join("");
     }).join("") || `<div class="empty">Nothing waiting in ${escapeHtml(viewName)}.</div>`;
-    const done = items.filter(i => i.type === "reminder" && i.done && openCat && !listOpen && inView(i))
+    const done = items.filter(i => archived(i) && openCat && !listOpen && inView(i))
       .sort((a, b) => dateValue(b.doneAt) - dateValue(a.doneAt));
     // completed reminders stay out of sight behind their button until it's tapped
     if (!done.length) state.showDone = false;
@@ -4180,7 +4193,7 @@
       <div class="settings-row"><span>Phone alerts</span><span class="val">${notifHtml}</span></div>
       ${standalone ? "" : `<div class="settings-row"><span>Install</span><span class="val"><span class="small">Use your browser's Share or menu button, then “Add to Home Screen”.</span></span></div>`}
       ${legacyCount ? `<div class="settings-row"><span>Old data on this device</span><span class="val"><span class="small">${legacyCount} item${legacyCount === 1 ? "" : "s"}</span><button data-action="import-local">Import</button></span></div>` : ""}
-      <div class="settings-row"><span>Tidy-up</span><span class="val"><span class="small">Events are removed 5 years after they happen. Completed reminders are removed 5 years after they're ticked off.</span></span></div>
+      <div class="settings-row"><span>Tidy-up</span><span class="val"><span class="small">Events are removed 5 years after they happen. Ticked-off reminders go to the Archive after a day, and are removed 5 years after they're ticked off.</span></span></div>
       <div class="settings-row"><span>Signed in</span><span class="val"><button data-action="sign-out">Sign out</button></span></div>
       <div class="settings-row"><span>Version</span><span class="val"><span class="small">${VERSION}</span></span></div>`;
   }
