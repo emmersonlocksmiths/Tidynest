@@ -1,7 +1,7 @@
 // TidyNest service worker: lets the app open offline and show alerts.
 // Pages are always fetched fresh when online, so uploading a new version takes effect straight away.
 
-const CACHE = "tidynest-v5";
+const CACHE = "tidynest-v6";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "logo-mark.png", "logo-mark-dark.png", "onest.woff2"];
 const FIREBASE_SDK = "https://www.gstatic.com/firebasejs/";
 

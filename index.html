@@ -23,7 +23,7 @@
       --accent:#0b2545;--on-accent:#fff;--accent-tint:#e7ecf3;--link:#0a7d6b;--focus:#0c9d86;--danger:#c9372c;--ok:#0a7d6b;--warn:#e8730c;
       --nav:rgba(255,255,255,.94);--scrim:rgba(11,24,45,.45);
       --note-bg:#e7ecf3;--note-fg:#0b2545;--bad-bg:#fdecea;--bad-fg:#a52a20;--soon-bg:#fff1c9;--soon-fg:#8f5b00;--info-bg:#e2f5f1;--info-fg:#0a6658;
-      --toast-bg:#0f1b2d;--toast-btn:#2a3a52;--toast-muted:#b7c2d1;--brand-navy:#0b2545;--brand-green:#0c9d86;
+      --toast-bg:#0f1b2d;--toast-btn:#2a3a52;--toast-muted:#b7c2d1;--brand-navy:#0b2545;--brand-green:#079c8f;
       --c-blue:#1677ff;--c-pink:#e0447c;--c-teal:#0c9d86;--c-orange:#e8730c;--c-purple:#7950f2;--c-green:#2f9e44;--c-gold:#b88a00;--c-slate:#5c7c99;
       --c-red:#e03131;--c-coral:#f06548;--c-lime:#66a80f;--c-aqua:#1098ad;--c-navy:#233a8f;--c-magenta:#be4bdb;--c-brown:#8d5a2b;--c-graphite:#343a40;--on-who:#fff}
     /* Dark mode: follows the phone's own light/dark setting. */
@@ -45,7 +45,7 @@
     header{padding:calc(14px + env(safe-area-inset-top)) 18px 2px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
     .head-text{min-width:0}
     header h1{margin:0;font-size:25px;font-weight:800;letter-spacing:-.6px;line-height:1.15;display:flex;align-items:center;gap:9px}
-    header h1 img{width:33px;height:auto;flex:0 0 auto}
+    header h1 img{width:31px;height:auto;flex:0 0 auto}
     header p{margin:2px 0 0;color:var(--muted);font-size:14px}
     main{padding:0 12px}
     .section{margin:14px 0}
@@ -666,7 +666,7 @@
 <div id="authScreen" class="auth-wrap hidden">
   <form class="auth-card" id="authForm" novalidate>
     <div class="brand">
-      <picture><source srcset="logo-mark-dark.png" media="(prefers-color-scheme: dark)"><img src="logo-mark.png" alt="" width="240" height="202"></picture>
+      <picture><source srcset="logo-mark-dark.png" media="(prefers-color-scheme: dark)"><img src="logo-mark.png" alt="" width="372" height="383"></picture>
       <h1>Tidy<span>Nest</span></h1>
       <p class="tagline">Life at home, organised.</p>
     </div>
@@ -718,7 +718,7 @@
   <div class="app">
     <header>
       <div class="head-text">
-        <h1><picture><source srcset="logo-mark-dark.png" media="(prefers-color-scheme: dark)"><img src="logo-mark.png" alt="" width="240" height="202"></picture><span id="pageTitle" class="wordmark">Tidy<span>Nest</span></span></h1>
+        <h1><picture><source srcset="logo-mark-dark.png" media="(prefers-color-scheme: dark)"><img src="logo-mark.png" alt="" width="372" height="383"></picture><span id="pageTitle" class="wordmark">Tidy<span>Nest</span></span></h1>
         <p id="pageSubtitle"></p>
       </div>
       <div class="head-actions">
@@ -1001,7 +1001,7 @@
   </div>
 </div>
 
-<div class="rotate-note" role="status"><div><picture><source srcset="logo-mark-dark.png" media="(prefers-color-scheme: dark)"><img src="logo-mark.png" alt="" width="240" height="202"></picture><b>Turn your phone upright</b><span>TidyNest is laid out for portrait.</span></div></div>
+<div class="rotate-note" role="status"><div><picture><source srcset="logo-mark-dark.png" media="(prefers-color-scheme: dark)"><img src="logo-mark.png" alt="" width="372" height="383"></picture><b>Turn your phone upright</b><span>TidyNest is laid out for portrait.</span></div></div>
 
 <div id="toast" class="toast" role="status"></div>
 <button id="newsBanner" class="news" data-action="news-open" aria-live="polite" tabindex="-1"></button>
@@ -1042,7 +1042,7 @@
     onSnapshot, query, where, limit, serverTimestamp, arrayUnion, arrayRemove, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-  const VERSION = "0.96";
+  const VERSION = "0.97";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAtOSr0yNRMh26de_1OHx4wl7ylUjlqACo",
