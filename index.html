@@ -634,6 +634,49 @@
     .divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px;margin:22px 0 4px}
     .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
 
+
+    /* ---------- On a computer (a wide window with a mouse): the bottom bar becomes a menu down the left side, with the
+       logo and + Add at the top of it and Notifications in it. Pages stay one column, a little wider, and pop-ups open
+       as a window in the middle of the screen. Phones never see any of this. ---------- */
+    .side-only{display:none !important}
+    @media (min-width: 900px) and (hover: hover) and (pointer: fine){
+      :root{--side:232px}
+      body{padding-bottom:40px;padding-left:var(--side)}
+      .app{max-width:720px}
+      header{padding-top:26px}
+      header h1 picture{display:none}
+      .head-actions{display:none}
+      .nav{top:0;right:auto;width:var(--side);padding:22px 14px;border-top:0;border-right:1px solid var(--line);background:var(--card);backdrop-filter:none;-webkit-backdrop-filter:none;overflow-y:auto}
+      .nav-inner{flex-direction:column;justify-content:flex-start;gap:2px;max-width:none}
+      .side-only{display:flex !important}
+      .side-brand{align-items:center;gap:9px;margin:0 8px 18px;font-size:22px;font-weight:800;letter-spacing:-.5px}
+      .side-brand img{width:30px;height:auto;display:block}
+      .nav .side-add{justify-content:center;border:0;border-radius:14px;background:var(--accent);color:var(--on-accent);font-size:15px;font-weight:800;padding:11px 12px;margin:0 2px 14px;cursor:pointer}
+      .nav .side-add.hidden{visibility:hidden;display:flex !important}
+      .nav .side-add:hover{filter:brightness(1.15)}
+      .nav button:not(.side-add){display:flex;align-items:center;gap:12px;flex:0 0 auto;width:100%;padding:8px 10px;border-radius:12px;font-size:15px;font-weight:600;text-align:left;cursor:pointer}
+      .nav button:not(.side-add):hover{background:var(--fill)}
+      .nav button.active{background:var(--accent-tint);background:color-mix(in srgb,var(--accent) 12%,var(--card))}
+      .nav-icon{width:auto;height:auto;padding:0;margin:0}
+      .nav-icon::before{display:none}
+      .nav-icon svg{width:22px;height:22px;display:block}
+      .nav-two{display:inline;margin:0 0 0 4px;font-size:inherit;line-height:inherit}
+      .nav-badge{top:-6px;right:-8px}
+      /* pop-ups: a window in the middle of the screen (beside the menu) */
+      .modal-backdrop{align-items:center;justify-content:center;padding:28px 28px 28px calc(var(--side) + 28px)}
+      .modal,.top-sheet{width:100%;max-width:580px;border-radius:22px;max-height:calc(100vh - 56px);padding:22px 22px;margin:0 auto;box-shadow:0 24px 60px rgba(0,0,0,.25)}
+      .top-sheet{align-self:center;margin-top:0}
+      @keyframes sheet-up{from{transform:translateY(18px) scale(.98);opacity:0}to{transform:none;opacity:1}}
+      @keyframes sheet-down{from{transform:translateY(-18px) scale(.98);opacity:0}to{transform:none;opacity:1}}
+      #chatList{max-height:52vh}
+      .toast{bottom:28px;margin-left:calc(var(--side) / 2)}
+      .news{left:calc(var(--side) + 20px)}
+      /* things you can click light up under the mouse */
+      .item:hover{background:var(--fill)}
+      .item-body,.tile,.fold,.cal-cell,[data-action]{cursor:pointer}
+      .tile:hover,.fold:hover{filter:brightness(.97)}
+    }
+
     /* phones turned sideways */
     .rotate-note{display:none}
     @media (orientation: landscape) and (max-height: 520px) and (min-aspect-ratio: 3/2) and (pointer: coarse){
@@ -850,11 +893,14 @@
 
   <nav class="nav">
     <div class="nav-inner">
+      <div class="side-only side-brand"><picture><source srcset="logo-mark-dark.png" media="(prefers-color-scheme: dark)"><img src="logo-mark.png" alt="" width="372" height="383"></picture><span class="wordmark">Tidy<span>Nest</span></span></div>
+      <button id="sideAdd" class="side-only side-add" data-action="add-here">+ Add</button>
       <button class="active" data-action="view" data-view="home"><span class="nav-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 9.8V20h13V9.8"/><path d="M10 20v-5.5h4V20"/></svg></span>Home</button>
       <button data-action="view" data-view="calendar"><span class="nav-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="M7.5 13.3h9M7.5 16.9h5.5"/></svg></span>Calendar</button>
       <button data-action="view" data-view="reminders"><span class="nav-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 6.5 1.6 1.6L8.4 5"/><path d="M11.5 6.6H20"/><path d="m4 12.5 1.6 1.6 2.8-3.1"/><path d="M11.5 12.6H20"/><rect x="4.2" y="16.8" width="3.6" height="3.6" rx=".8"/><path d="M11.5 18.6H20"/></svg></span>Reminders</button>
       <button data-action="view" data-view="lists"><span class="nav-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4.5h12a1.5 1.5 0 0 1 1.5 1.5v13.5a1.5 1.5 0 0 1-1.5 1.5H6a1.5 1.5 0 0 1-1.5-1.5V6A1.5 1.5 0 0 1 6 4.5z"/><path d="M9 3v3M15 3v3"/><path d="M8.2 11h.01M8.2 14.5h.01M8.2 18h.01" stroke-width="2.6"/><path d="M11 11h5M11 14.5h5M11 18h3"/></svg></span>Lists</button>
       <button data-action="view" data-view="timers"><span class="nav-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V9.8M10 3.2h4M12 3.2v3.3M17.6 7.4l1.3-1.3"/></svg></span>Timers</button>
+      <button class="side-only" data-action="view" data-view="notifications"><span class="nav-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6a5.6 5.6 0 0 0-5.6 5.6c0 4.6-1.9 6-2.1 7.8h15.4c-.2-1.8-2.1-3.2-2.1-7.8A5.6 5.6 0 0 0 12 3.6z"/><path d="M10 19.8a2.1 2.1 0 0 0 4 0"/></svg><i id="sideBadge" class="nav-badge hidden"></i></span>Notifications</button>
       <button data-action="view" data-view="settings"><span class="nav-icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.52 5.57L10.75 3.09L13.25 3.09L13.48 5.57A6.6 6.6 0 0 1 15.50 6.40L15.50 6.40L17.42 4.81L19.19 6.58L17.60 8.50A6.6 6.6 0 0 1 18.43 10.52L18.43 10.52L20.91 10.75L20.91 13.25L18.43 13.48A6.6 6.6 0 0 1 17.60 15.50L17.60 15.50L19.19 17.42L17.42 19.19L15.50 17.60A6.6 6.6 0 0 1 13.48 18.43L13.48 18.43L13.25 20.91L10.75 20.91L10.52 18.43A6.6 6.6 0 0 1 8.50 17.60L8.50 17.60L6.58 19.19L4.81 17.42L6.40 15.50A6.6 6.6 0 0 1 5.57 13.48L5.57 13.48L3.09 13.25L3.09 10.75L5.57 10.52A6.6 6.6 0 0 1 6.40 8.50L6.40 8.50L4.81 6.58L6.58 4.81L8.50 6.40A6.6 6.6 0 0 1 10.52 5.57Z"/><circle cx="12" cy="12" r="2.7"/></svg></span>Settings</button>
     </div>
   </nav>
@@ -1042,7 +1088,10 @@
     onSnapshot, query, where, limit, serverTimestamp, arrayUnion, arrayRemove, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-  const VERSION = "0.97";
+  const VERSION = "0.98";
+  // the computer layout (side menu): must match the @media rule in the styles
+  const WIDE = window.matchMedia("(min-width: 900px) and (hover: hover) and (pointer: fine)");
+  WIDE.addEventListener?.("change", () => state.user && state.household && render());
 
   const firebaseConfig = {
     apiKey: "AIzaSyAtOSr0yNRMh26de_1OHx4wl7ylUjlqACo",
@@ -1200,12 +1249,12 @@
     return d;
   }
   // A ticked-off reminder stays in view, crossed off, for a day; after that it's archived: out of the lists and Home,
-  // but still kept (and counted on the Stats page) until the 5-year tidy-up. One with no tick time saved yet has only just been ticked.
+  // but still kept (and counted on the Stats page) until the 5-year tidy-up. (One ticked before tick times were saved counts as archived.)
   const ARCHIVE_AFTER_MS = 24 * 60 * 60 * 1000;
   function archived(item, now = Date.now()) {
     if (item.type !== "reminder" || !item.done) return false;
     const at = dateValue(item.doneAt);
-    return !!at && now - at >= ARCHIVE_AFTER_MS;
+    return !at || now - at >= ARCHIVE_AFTER_MS;
   }
   function dateValue(value) {
     if (!value) return 0;
@@ -3728,6 +3777,8 @@
     $("ackAll").classList.toggle("hidden", !waitingOnMe);
     $("navBadge").textContent = waitingOnMe > 9 ? "9+" : String(waitingOnMe);
     $("navBadge").classList.toggle("hidden", !waitingOnMe);
+    $("sideBadge").textContent = $("navBadge").textContent;
+    $("sideBadge").classList.toggle("hidden", !waitingOnMe);
     $("headerBell").setAttribute("aria-label", waitingOnMe ? `Notifications, ${waitingOnMe} to acknowledge` : "Notifications");
     if (waitingOnMe > (state.lastBell ?? waitingOnMe)) { const b = $("headerBell"); b.classList.remove("ring"); void b.offsetWidth; if (!motionOff()) b.classList.add("ring"); }   // a little ring when something new arrives
     state.lastBell = waitingOnMe;
@@ -3784,7 +3835,7 @@
     $("reminderList").innerHTML = used.map(([g, name]) => {
       const rows = showing.filter(i => groupOf(i) === g), rowIds = new Set(rows.map(i => i.id)), boxed = new Set();
       return (used.length > 1 ? `<h3 class="list-head ${g}">${name}</h3>` : "") + rows.map(i => {
-        const parent = eventOf(i);
+        const parent = g === "ticked" ? null : eventOf(i);   // under Ticked off they're plain rows, so an event's box isn't shown twice
         if (!parent) return renderItem(i);
         if (boxed.has(parent.id)) return "";
         boxed.add(parent.id);
@@ -3827,7 +3878,7 @@
     if (state.viewId && !$("viewSheet").classList.contains("hidden")) renderView();
     if (state.view === "stats") renderStats();
 
-    if (state.view === "home") $("pageTitle").innerHTML = "Tidy<span>Nest</span>";
+    if (state.view === "home") $("pageTitle").innerHTML = WIDE.matches ? "Home" : "Tidy<span>Nest</span>";   // on a computer the logo's in the side menu
     else $("pageTitle").textContent = state.view.charAt(0).toUpperCase() + state.view.slice(1);
     $("pageSubtitle").textContent = now.toLocaleDateString([], { weekday:"long", day:"numeric", month:"long" });
   }
@@ -4358,6 +4409,7 @@
     $("headerBell").classList.toggle("on", name === "notifications");
     $("headerBell").setAttribute("aria-pressed", String(name === "notifications"));
     $("headerAdd").classList.toggle("hidden", name === "settings" || name === "notifications" || name === "stats");
+    $("sideAdd").classList.toggle("hidden", name === "settings" || name === "notifications" || name === "stats");
     $("headerAdd").setAttribute("aria-label", { calendar: "Add an event on the selected day", reminders: "Add a reminder", lists: "Add to a list, or a new list", timers: "Add a timer" }[name] || "Add");
     window.scrollTo(0, 0);
     render();
@@ -4876,6 +4928,12 @@
 
   document.addEventListener("keydown", event => {
     if (event.key === "Escape" && $("backdrop").classList.contains("open")) return closeSheets();
+    // on a computer, N starts something new on the page you're on (not while typing, and not with a pop-up open)
+    if ((event.key === "n" || event.key === "N") && !event.ctrlKey && !event.metaKey && !event.altKey && state.user && state.household
+        && !$("backdrop").classList.contains("open") && !event.target.closest?.("input, textarea, select, [contenteditable]") && !$("headerAdd").classList.contains("hidden")) {
+      event.preventDefault();
+      return actions["add-here"]();
+    }
     if (event.key !== "Enter") return;
     const id = event.target.id;
     if (id === "itemTitle") saveItem();
