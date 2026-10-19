@@ -76,15 +76,20 @@ function timerMode(item) {
   return new Date(item.date).getTime() > made ? "down" : "up";
 }
 
-// Things that sound an alert when their time comes (the same as the app, except that something for a whole day
-// doesn't wake anyone at midnight).
-function alertable(item) {
-  if (item.listItem || item.allDay) return false;
-  if (item.type === "reminder") return !item.done;
-  if (item.type === "calendar") return true;
-  if (item.type === "timer") return timerMode(item) === "down";
-  return false;
+// When something's alert goes off, in milliseconds (or null for never). The same as the app's alertTime:
+// `alert` is how many minutes before the start (false for none); a countdown goes off when it finishes; things saved
+// before alerts could be chosen go off at their time, or not at all if they're for a whole day.
+function alertAt(item) {
+  if (!item || item.listItem) return null;
+  const t = new Date(item.date).getTime();
+  if (!Number.isFinite(t)) return null;
+  if (item.type === "timer") return timerMode(item) === "down" ? t : null;
+  if (item.type !== "reminder" && item.type !== "calendar") return null;
+  if (item.type === "reminder" && item.done) return null;
+  const a = item.alert === false ? null : typeof item.alert === "number" ? item.alert : item.allDay ? null : 0;
+  return a === null ? null : t - a * 60000;
 }
+const alertable = item => alertAt(item) !== null;
 
 // Who an alert is for: the people it's for if it's shared, otherwise whoever made it.
 function ownersOf(item, household) {
@@ -95,22 +100,33 @@ function ownersOf(item, household) {
   return owners.length ? owners : [item.createdBy];
 }
 
+function aheadText(mins) {
+  if (mins >= 1440 && mins % 1440 === 0) return mins === 1440 ? "1 day" : `${mins / 1440} days`;
+  if (mins >= 60 && mins % 60 === 0) return mins === 60 ? "1 hour" : `${mins / 60} hours`;
+  return mins === 1 ? "1 minute" : `${mins} minutes`;
+}
 function dueMessage(item, id) {
-  const title = item.type === "reminder" ? "Reminder" : item.type === "timer" ? "Timer finished" : "Starting now";
-  return { title, body: `${item.title}, ${timeText(item.date)}`, tag: "due-" + id, url: "./?item=" + encodeURIComponent(id) };
+  const ahead = item.type === "timer" ? 0 : typeof item.alert === "number" ? item.alert : 0;
+  const title = item.type === "reminder" ? "Reminder" : item.type === "timer" ? "Timer finished" : ahead > 0 || item.allDay ? "Coming up" : "Starting now";
+  const body = item.allDay ? `${ahead > 0 ? "Tomorrow" : "Today"}: ${item.title}`
+    : ahead > 0 ? `${item.title}, ${timeText(item.date)} (in ${aheadText(ahead)})` : `${item.title}, ${timeText(item.date)}`;
+  return { title, body, tag: "due-" + id, url: "./?item=" + encodeURIComponent(id) };
 }
 
-// Alerts due now, from one household's items whose time is in the last 15 minutes.
+// Alerts due now, from one household's items whose alert time is in the last 15 minutes.
 function dueNotices(hid, items, household, now) {
   const out = [];
+  const seen = new Set();
   for (const { id, data } of items) {
-    const t = new Date(data.date).getTime();
-    if (!Number.isFinite(t) || t > now || now - t > DUE_WINDOW_MS || !alertable(data)) continue;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const t = alertAt(data);
+    if (t === null || t > now || now - t > DUE_WINDOW_MS) continue;
     for (const uid of ownersOf(data, household)) {
-      out.push({ uid, key: ["due", hid, id, data.date, uid].join("|"), message: dueMessage(data, id) });
+      out.push({ uid, key: ["due", hid, id, new Date(t).toISOString(), uid].join("|"), message: dueMessage(data, id) });
     }
   }
   return out;
 }
 
-module.exports = { needs, stampOf, changeNotices, dueNotices, alertable, ownersOf, whenText, DUE_WINDOW_MS };
+module.exports = { needs, stampOf, changeNotices, dueNotices, alertAt, alertable, ownersOf, whenText, DUE_WINDOW_MS };
