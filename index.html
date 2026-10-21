@@ -1095,7 +1095,7 @@
     onSnapshot, query, where, limit, serverTimestamp, arrayUnion, arrayRemove, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-  const VERSION = "1.00";
+  const VERSION = "1.01";
   // the computer layout (side menu): must match the @media rule in the styles
   const WIDE = window.matchMedia("(min-width: 900px) and (hover: hover) and (pointer: fine)");
   WIDE.addEventListener?.("change", () => state.user && state.household && render());
@@ -3872,7 +3872,7 @@
     const ticked = openCat && !listOpen ? items.filter(i => i.type === "reminder" && i.done && !archived(i) && inView(i))
       .sort((a, b) => (dateValue(b.doneAt) || Infinity) - (dateValue(a.doneAt) || Infinity)) : [];
     const showing = openCat && !listOpen ? open.filter(inView).concat(ticked) : [];
-    // grouped like Home: no date first, then Overdue, Today, Coming up (the next 3 days) and Later.
+    // grouped: Overdue first, then Today, then the ones with no date, then Coming up (the next 3 days) and Later.
     // The headings only appear when there's more than one group.
     const groupOf = i => {
       if (i.done) return "ticked";
@@ -3882,7 +3882,7 @@
       if (t < tomorrowStart) return "today";
       return t < soonEnd ? "soon" : "later";
     };
-    const GROUPS = [["none", "No date"], ["overdue", "Overdue"], ["today", "Today"], ["soon", "Coming up"], ["later", "Later"], ["ticked", "Ticked off"]];
+    const GROUPS = [["overdue", "Overdue"], ["today", "Today"], ["none", "No date"], ["soon", "Coming up"], ["later", "Later"], ["ticked", "Ticked off"]];
     const used = GROUPS.filter(([g]) => showing.some(i => groupOf(i) === g));
     $("reminderList").innerHTML = used.map(([g, name]) => {
       const rows = showing.filter(i => groupOf(i) === g), rowIds = new Set(rows.map(i => i.id)), boxed = new Set();
