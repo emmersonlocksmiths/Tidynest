@@ -156,6 +156,11 @@
     .pill.chat-btn svg,.pill.ack-btn svg{width:18px;height:18px}
     .ack-status{width:30px;height:30px;display:grid;place-items:center;color:var(--faint)}
     .ack-status svg{width:18px;height:18px}.ack-status.ok{color:var(--ok)}.ack-status.ok svg{width:20px;height:20px}
+    .missed-by{display:inline-flex;align-items:center;gap:4px;color:var(--danger);font-weight:700;white-space:nowrap}
+    .tick.missed{background:var(--card);border-color:var(--text);color:var(--text);font-size:14px}
+    .item.done .tick.missed + .item-main .item-title{text-decoration:none}
+    .v-finish{flex-wrap:wrap;gap:8px}.v-btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+    .v-btn.miss{color:var(--danger)}
     .ack-note,.done-by{display:inline-flex;align-items:center;gap:4px;color:var(--ok);font-weight:700;white-space:nowrap}.ack-note svg,.done-by svg{width:13px;height:13px}
     #chatList{max-height:46vh;overflow-y:auto;margin-top:12px}
     /* The chat comes down from the top of the screen and is only as tall as what's left above the keyboard
@@ -513,6 +518,7 @@
     .st-top{display:grid;grid-template-columns:1fr 30px;gap:7px 10px;font-size:14px;font-weight:600;align-items:center}
     .st-top .lab{display:flex;flex-direction:column;gap:4px;min-width:0}
     .st-top .lab small{color:var(--muted);font-weight:500;font-size:12px}
+    .st-top .bar.miss{background:var(--danger)}
     .st-top .bar{height:6px;border-radius:0 4px 4px 0;background:var(--accent);min-width:3px}
     .st-top .num{text-align:right;font-weight:800}
     #statsView .section-title h2 small{font-size:12.5px;font-weight:600;color:var(--muted);margin-left:6px}
@@ -851,7 +857,7 @@
                 <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9.5 6 6 6-6" stroke-width="2.2"/></svg>
               </button>
               <div id="doneBox" class="hidden">
-                <div class="section-title fold-note"><span class="small">Reminders move here a day after they're ticked off. Kept for 5 years, then removed.</span></div>
+                <div class="section-title fold-note"><span class="small">Reminders move here a day after they're ticked off, or straight away if they weren't completed. Kept for 5 years, then removed.</span></div>
                 <div id="doneList" class="card list"></div>
               </div>
             </div>
@@ -1095,7 +1101,7 @@
     onSnapshot, query, where, limit, serverTimestamp, arrayUnion, arrayRemove, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-  const VERSION = "1.01";
+  const VERSION = "1.02";
   // the computer layout (side menu): must match the @media rule in the styles
   const WIDE = window.matchMedia("(min-width: 900px) and (hover: hover) and (pointer: fine)");
   WIDE.addEventListener?.("change", () => state.user && state.household && render());
@@ -1260,6 +1266,7 @@
   const ARCHIVE_AFTER_MS = 24 * 60 * 60 * 1000;
   function archived(item, now = Date.now()) {
     if (item.type !== "reminder" || !item.done) return false;
+    if (item.missed) return true;   // "Didn't complete" takes it out of the lists straight away
     const at = dateValue(item.doneAt);
     return !at || now - at >= ARCHIVE_AFTER_MS;
   }
@@ -1808,8 +1815,8 @@
   // The event page's "Reminders for this event" card. Nothing is saved until the event is: form.links holds what the
   // card shows (ones already saved have an id), and form.linksGone the saved ones that were removed.
   function renderLinks() {
-    const left = form.links.filter(l => !l.done).length;
-    $("linkCount").textContent = form.links.length ? `${form.links.length - left} of ${form.links.length} done` : "";
+    const left = form.links.filter(l => !l.done).length, missed = form.links.filter(l => l.missed).length;
+    $("linkCount").textContent = form.links.length ? `${form.links.length - left - missed} of ${form.links.length} done${missed ? `, ${missed} not completed` : ""}` : "";
     $("linkCard").classList.toggle("empty", !form.links.length);
     $("linkNew").placeholder = form.links.length ? "Add another…" : "Add a reminder for this event…";
     $("linkList").innerHTML = form.links.map((l, n) => `<div class="link-row">
@@ -3107,11 +3114,13 @@
     const done = !item.done;
     // show it straight away; the saved copy follows a moment later
     item.done = done;
+    item.missed = false;
     item.doneBy = done ? state.user.uid : null;
     item.doneAt = done ? { seconds: Date.now() / 1000 } : null;
     render();
     const patch = {
       done,
+      missed: false,
       doneBy: done ? state.user.uid : null,
       doneAt: done ? serverTimestamp() : null,
       updatedAt: serverTimestamp()
@@ -3124,6 +3133,20 @@
       else if (log.length && Date.now() - log[log.length - 1] < 30 * 60000) { patch.gotAt = arrayRemove(log[log.length - 1]); item.gotAt = log.slice(0, -1); }
     }
     updateDoc(itemRef(id), patch).catch(writeFailed);
+  }
+
+  // "Didn't complete": the reminder is finished with, but it wasn't done. It leaves the lists (and stops alerting)
+  // straight away, goes into the Archive marked with a cross, and counts on the Stats page as not completed.
+  function markMissed(id) {
+    const item = findItem(id);
+    if (!item || item.type !== "reminder") return;
+    item.done = true; item.missed = true;
+    item.doneBy = state.user.uid;
+    item.doneAt = { seconds: Date.now() / 1000 };
+    closeSheets();
+    render();
+    toast("Removed, marked as didn't complete. It's in the Archive if you need it back.");
+    updateDoc(itemRef(id), { done: true, missed: true, doneBy: state.user.uid, doneAt: serverTimestamp(), updatedAt: serverTimestamp() }).catch(writeFailed);
   }
 
   function askDeleteItem() {
@@ -3605,7 +3628,7 @@
     const id = escapeHtml(item.id);
     const rule = repeatOf(item);
     const lead = item.type === "reminder"
-      ? `<button class="tick ${item.done ? "on" : ""}" data-action="toggle" data-id="${id}" aria-label="${item.done ? "Mark as not done" : "Mark as done"}">${item.done ? "✓" : ""}</button>`
+      ? `<button class="tick ${item.done ? "on" : ""}${item.missed ? " missed" : ""}" data-action="toggle" data-id="${id}" aria-label="${item.missed ? "Put it back on the list" : item.done ? "Mark as not done" : "Mark as done"}">${item.missed ? "✕" : item.done ? "✓" : ""}</button>`
       : `<div class="icon ${escapeHtml(item.type)}">${typeIcon(item.type)}</div>`;
     const ack = onHome ? ackParts(item) : { control: "", note: "" };
     const left = t - Date.now();
@@ -3621,7 +3644,9 @@
       : '<span class="badge overdue">Overdue</span>';
     // title, then one line with the date, any Overdue badge, who it belongs to and who has acknowledged it
     // a ticked-off reminder says who ticked it
-    const doneNote = item.type === "reminder" && item.done
+    const doneNote = item.type === "reminder" && item.missed
+      ? `<span class="missed-by">✕ Didn't complete</span>`
+      : item.type === "reminder" && item.done
       ? `<span class="done-by">${ICONS.check}Completed${item.doneBy ? " by " + escapeHtml(nameOf(item.doneBy)) : ""}</span>` : "";
     // a reminder that belongs to an event says so, unless it's already sitting under that event
     const parent = nested ? null : eventOf(item);
@@ -4478,8 +4503,12 @@
     const lastSame = Math.min(new Date(now.getFullYear(), now.getMonth() - 1, now.getDate(), now.getHours(), now.getMinutes()).getTime(), monthStart - 1);
     const reminders = state.items.filter(i => i.type === "reminder" && !i.listItem);
     const doneAt = i => dateValue(i.doneAt);
-    const doneThis = reminders.filter(i => i.done && doneAt(i) >= monthStart);
-    const doneLast = reminders.filter(i => i.done && doneAt(i) >= lastStart.getTime() && doneAt(i) <= lastSame);
+    // "done" means really completed; a "Didn't complete" one is counted on its own
+    const completed = i => i.done && !i.missed;
+    const doneThis = reminders.filter(i => completed(i) && doneAt(i) >= monthStart);
+    const doneLast = reminders.filter(i => completed(i) && doneAt(i) >= lastStart.getTime() && doneAt(i) <= lastSame);
+    const missedThis = reminders.filter(i => i.missed && doneAt(i) >= monthStart);
+    const missedLast = reminders.filter(i => i.missed && doneAt(i) >= lastStart.getTime() && doneAt(i) <= lastSame);
     const monthName = now.toLocaleDateString([], { month: "long" });
     // on time means done by the end of the day it was due (or the day it finished, if it runs over several)
     const dueBy = i => addDays(startOfDay(new Date(itemEnd(i))), 1).getTime();
@@ -4490,9 +4519,15 @@
     const diff = doneThis.length - doneLast.length;
     const vsLast = !doneLast.length && !doneThis.length ? "" : diff > 0 ? `<em>▲ ${diff} on this time last month</em>` : diff < 0 ? `<em class="down">▼ ${-diff} on this time last month</em>` : `<em>Same as this time last month</em>`;
     const pct = dated.length ? Math.round(onTime / dated.length * 100) + "%" : "–";
+    const finished = doneThis.length + missedThis.length;
+    const rate = finished ? Math.round(doneThis.length / finished * 100) + "%" : "–";
+    const mDiff = missedThis.length - missedLast.length;
+    const missVs = !missedLast.length && !missedThis.length ? "" : mDiff > 0 ? `<em class="down">▲ ${mDiff} on this time last month</em>` : mDiff < 0 ? `<em>▼ ${-mDiff} on this time last month</em>` : `<em>Same as this time last month</em>`;
     const tiles = `<div class="st-tiles">
         <div class="st-tile"><b>${doneThis.length}</b><span>things done</span>${vsLast}</div>
         <div class="st-tile"><b>${pct}</b><span>on time</span>${dated.length || stillLate ? `<em class="${lateCount ? "down" : ""}">${lateCount ? `${lateCount} went overdue` : "None went overdue"}</em>` : ""}</div>
+        <div class="st-tile"><b>${missedThis.length}</b><span>didn't complete</span>${missVs}</div>
+        <div class="st-tile"><b>${rate}</b><span>completed</span>${finished ? `<em class="${missedThis.length ? "down" : ""}">${doneThis.length} of ${finished} finished</em>` : ""}</div>
       </div>`;
 
     // streaks: repeats kept up, counting back from the latest one that's due
@@ -4501,15 +4536,15 @@
     const streaks = [];
     for (const list of Object.values(series)) {
       const past = list.filter(i => Number.isFinite(itemTime(i)) && itemTime(i) <= nowMs).sort((a, b) => itemTime(b) - itemTime(a));
-      if (past[0] && !past[0].done && itemTime(past[0]) >= startOfDay(now).getTime()) past.shift();   // today's, not done yet, doesn't break it
+      if (past[0] && !past[0].done && itemTime(past[0]) >= startOfDay(now).getTime()) past.shift();   // (a "didn't complete" today does break it)   // today's, not done yet, doesn't break it
       let run = 0;
-      while (run < past.length && past[run].done) run++;
+      while (run < past.length && completed(past[run])) run++;
       if (run < 2) continue;
       const rule = repeatOf(past[0]);
       const unit = { day: "day", week: "week", month: "month", year: "year" }[rule.unit] || "time";
       const every = rule.every === 1 ? `${run} ${unit}s in a row` : `${run} in a row`;
       const since = past[run - 1] ? new Date(itemTime(past[run - 1])).toLocaleDateString([], { day: "numeric", month: "long" }) : "";
-      streaks.push({ title: past[0].title, run, said: rule.unit === "day" && rule.every === 1 ? every : `${every}, since ${since}`, dots: past.slice(0, 14).reverse().map(i => i.done) });
+      streaks.push({ title: past[0].title, run, said: rule.unit === "day" && rule.every === 1 ? every : `${every}, since ${since}`, dots: past.slice(0, 14).reverse().map(i => completed(i)) });
     }
     streaks.sort((a, b) => b.run - a.run);
     const streakHtml = streaks.length
@@ -4551,10 +4586,23 @@
       ? `<div class="st-top">${top.map(t => `<span class="lab"><span>${escapeHtml(t.title)}${lists.size > 1 ? ` <small>${escapeHtml(t.list)}</small>` : ""}</span><span class="bar" style="width:${Math.round(t.n / top[0].n * 100)}%"></span></span><span class="num">${t.n}</span>`).join("")}</div>`
       : `<div class="st-empty">As things get crossed off your lists, the ones you buy most show up here.</div>`;
 
+    // the reminders most often marked "Didn't complete", over the last year
+    const missTally = {};
+    for (const i of reminders.filter(i => i.missed && doneAt(i) >= yearAgo)) {
+      const k = i.title.trim().toLowerCase();
+      missTally[k] = missTally[k] || { title: i.title.trim(), n: 0 };
+      missTally[k].n++;
+    }
+    const missTop = Object.values(missTally).sort((a, b) => b.n - a.n).slice(0, 5);
+    const missHtml = missTop.length
+      ? `<div class="st-top">${missTop.map(t => `<span class="lab"><span>${escapeHtml(t.title)}</span><span class="bar miss" style="width:${Math.round(t.n / missTop[0].n * 100)}%"></span></span><span class="num">${t.n}</span>`).join("")}</div>`
+      : `<div class="st-empty">Nothing marked “Didn't complete” in the last year.</div>`;
+
     $("statsBody").innerHTML = `
       <div class="section"><div class="section-title"><h2>${escapeHtml(monthName)} so far</h2></div>${tiles}</div>
       <div class="section"><div class="section-title"><h2>Streaks</h2></div><div class="st-card">${streakHtml}</div></div>
       <div class="section"><div class="section-title"><h2>Who ticked things off <small>in ${escapeHtml(monthName)}</small></h2></div><div class="st-card">${whoHtml}</div></div>
+      <div class="section"><div class="section-title"><h2>Often not completed <small>this year</small></h2></div><div class="st-card">${missHtml}</div></div>
       <div class="section"><div class="section-title"><h2>The week ahead</h2></div><div class="st-card">${aheadHtml}</div></div>
       <div class="section"><div class="section-title"><h2>Most bought <small>this year</small></h2></div><div class="st-card">${topHtml}</div></div>`;
   }
@@ -4618,8 +4666,12 @@
         item.type !== "timer" && alertLabel(item) ? `<span class="repeats">${ICONS.bell}Alert: ${escapeHtml(alertLabel(item).replace(/^./, c => c.toLowerCase()))}</span>` : ""].filter(Boolean).join("");
       when = `<div class="v-card"><div class="v-day">${escapeHtml(day)}</div>${time ? `<div class="v-time">${time}</div>` : ""}${extras ? `<div class="v-line">${extras}</div>` : ""}</div>`;
     }
-    const done = item.type === "reminder"
-      ? `<div class="v-card v-row"><span>${item.done ? `<span class="done-by">${ICONS.check}Completed${item.doneBy ? " by " + escapeHtml(nameOf(item.doneBy)) : ""}</span>` : "Not done yet"}</span><button class="v-btn" data-action="toggle" data-id="${id}">${item.done ? "Mark as not done" : ICONS.check + "Mark as done"}</button></div>` : "";
+    const done = item.type !== "reminder" ? ""
+      : item.missed
+      ? `<div class="v-card v-row"><span><span class="missed-by">✕ Didn't complete</span></span><button class="v-btn" data-action="toggle" data-id="${id}">Put it back</button></div>`
+      : item.done
+      ? `<div class="v-card v-row"><span><span class="done-by">${ICONS.check}Completed${item.doneBy ? " by " + escapeHtml(nameOf(item.doneBy)) : ""}</span></span><button class="v-btn" data-action="toggle" data-id="${id}">Mark as not done</button></div>`
+      : `<div class="v-card v-row v-finish"><span>Not done yet</span><span class="v-btns"><button class="v-btn" data-action="toggle" data-id="${id}">${ICONS.check}Mark as done</button><button class="v-btn miss" data-action="missed" data-id="${id}">✕ Didn't complete</button></span></div>`;
     const place = item.type !== "timer" && String(item.location || "").trim();
     const placeCard = place ? `<a class="v-card v-place" href="${escapeHtml(mapsUrl(place))}" target="_blank" rel="noopener">${ICONS.pin}<span>${escapeHtml(place)}<small>Get directions</small></span></a>` : "";
     const notes = item.notes ? `<div class="v-card"><h3>Notes</h3><div class="v-notes">${escapeHtml(item.notes)}</div></div>` : "";
@@ -4998,6 +5050,7 @@
     "edit": el => openItem(el.dataset.id),
     "open": el => openView(el.dataset.id),
     "toggle": el => toggleFrom(el),
+    "missed": el => markMissed(el.dataset.id),
     "save-item": () => saveItem(),
     "pick-type": el => { form.typeTouched = true; pickType(el.dataset.type); },
     "pick-repeat": el => pickRepeat(el.dataset.repeat),
