@@ -123,7 +123,7 @@
     .item-notes{font-size:13px;line-height:1.3;margin-top:3px;white-space:pre-wrap;overflow-wrap:anywhere}
     .shared{color:var(--muted);font-size:12px;white-space:nowrap}
     .share-ic{display:inline-flex;vertical-align:-2px;margin-left:5px;color:var(--muted)}.share-ic svg{width:13px;height:13px}
-    /* a timer's time: a box for each part (years, months, weeks, days, hours, minutes), the number over its name */
+    /* a timer's time: a box for each part (weeks, days, hours, minutes), the number over its name */
     .timer-number,.item-body > .timer-number{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 3px}
     .t-box{display:flex;flex-direction:column;align-items:center;min-width:40px;background:var(--accent-tint);border-radius:9px;padding:4px 5px 3px}
     .t-box b{font-size:18px;font-weight:800;letter-spacing:-.4px;line-height:1.1}
@@ -1104,7 +1104,7 @@
     onSnapshot, query, where, limit, serverTimestamp, arrayUnion, arrayRemove, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-  const VERSION = "1.03";
+  const VERSION = "1.04";
   // the computer layout (side menu): must match the @media rule in the styles
   const WIDE = window.matchMedia("(min-width: 900px) and (hover: hover) and (pointer: fine)");
   WIDE.addEventListener?.("change", () => state.user && state.household && render());
@@ -3684,31 +3684,14 @@
     const made = dateValue(item.createdAt) || Date.now();
     return itemTime(item) > made ? "down" : "up";
   }
-  // How long between two moments, as the parts people say: years, months, weeks, days and hours, not a pile of days.
-  // It's worked out on the calendar, so a month from the 6th is the 6th of the next month, whatever length the
-  // month is. Anything under a day is hours and minutes; there are no seconds. Parts that are zero are left out.
+  // How long between two moments for a timer, in weeks, days, hours and minutes: weeks are the biggest unit
+  // (so a few months away reads "14 weeks 2 days…", not months or years). There are no seconds, and parts that are
+  // zero are left out.
   function spanParts(fromMs, toMs) {
-    const start = Math.min(fromMs, toMs), end = Math.max(fromMs, toMs), ms = end - start;
-    let parts;
-    if (ms < 86400000) {
-      parts = [[Math.floor(ms / 3600000), "hour"], [Math.floor((ms % 3600000) / 60000), "minute"]];
-    } else {
-      const from = new Date(start), to = new Date(end);
-      // the same day of the month and time of day, n months on (the last day, in a month that's too short)
-      const monthsOn = n => {
-        const d = new Date(from);
-        d.setDate(1);
-        d.setMonth(d.getMonth() + n);
-        d.setDate(Math.min(from.getDate(), new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()));
-        return d;
-      };
-      let months = (to.getFullYear() - from.getFullYear()) * 12 + to.getMonth() - from.getMonth();
-      if (monthsOn(months) > to) months--;
-      const rest = to - monthsOn(months);
-      const days = Math.floor(rest / 86400000);
-      parts = [[Math.floor(months / 12), "year"], [months % 12, "month"], [Math.floor(days / 7), "week"], [days % 7, "day"], [Math.floor((rest % 86400000) / 3600000), "hour"], [Math.floor((rest % 3600000) / 60000), "minute"]];
-    }
-    parts = parts.filter(([n]) => n > 0);
+    const ms = Math.abs(toMs - fromMs);
+    const days = Math.floor(ms / 86400000);
+    const parts = [[Math.floor(days / 7), "week"], [days % 7, "day"], [Math.floor((ms % 86400000) / 3600000), "hour"], [Math.floor((ms % 3600000) / 60000), "minute"]]
+      .filter(([n]) => n > 0);
     return parts.length ? parts : [["<1", "minute"]];
   }
   const partName = ([n, unit]) => unit + (n === 1 || n === "<1" ? "" : "s");
