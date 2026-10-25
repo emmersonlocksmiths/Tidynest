@@ -1104,7 +1104,7 @@
     onSnapshot, query, where, limit, serverTimestamp, arrayUnion, arrayRemove, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-  const VERSION = "1.04";
+  const VERSION = "1.05";
   // the computer layout (side menu): must match the @media rule in the styles
   const WIDE = window.matchMedia("(min-width: 900px) and (hover: hover) and (pointer: fine)");
   WIDE.addEventListener?.("change", () => state.user && state.household && render());
@@ -3609,14 +3609,18 @@
     const parts = [w && unit(w, "week"), d && unit(d, "day"), h && unit(h, "hour"), m && unit(m, "minute")].filter(Boolean);
     return parts.length ? parts.join(" ") : unit(0, "minute");
   }
-  // Something for a whole day (no set time) counts down in whole days: "in 1 day", "in 2 days", "in 1 week 3 days".
+  // How long until something: later today it's hours and minutes ("in 2 hours 15 minutes"); on another day it goes
+  // by the calendar, in days and weeks only: "tomorrow", "in 2 days", "in 1 week 3 days".
   const daysUntil = (t, now = Date.now()) => Math.round((startOfDay(new Date(t)) - startOfDay(new Date(now))) / 86400000);
+  const dayWords = days => days === 1 ? "tomorrow" : "in " + spanWords(days * 1440);
   function untilDayText(t, now = Date.now()) {
     const days = Number.isFinite(t) ? daysUntil(t, now) : 0;
-    return days > 0 ? "in " + spanWords(days * 1440) : "";
+    return days > 0 ? dayWords(days) : "";
   }
   function untilText(t, now = Date.now()) {
     if (!Number.isFinite(t) || t <= now) return "";
+    const days = daysUntil(t, now);
+    if (days > 0) return dayWords(days);
     const mins = Math.floor((t - now) / 60000);
     return mins < 1 ? "in less than a minute" : "in " + spanWords(mins);
   }
