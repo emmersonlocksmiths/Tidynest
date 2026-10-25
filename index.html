@@ -161,6 +161,9 @@
     .item.done .tick.missed + .item-main .item-title{text-decoration:none}
     .v-finish{flex-wrap:wrap;gap:8px}.v-btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
     .v-btn.miss{color:var(--danger)}
+    .ack-note.bub{gap:4px;padding:1px 2px 1px 6px;border-radius:999px;background:color-mix(in srgb,var(--ok) 14%,var(--card));vertical-align:middle}
+    .ack-ini{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;color:#fff;font-style:normal;font-size:10px;font-weight:800;line-height:1}
+    .ack-ini + .ack-ini{margin-left:-6px;box-shadow:0 0 0 1.5px var(--card)}
     .ack-note,.done-by{display:inline-flex;align-items:center;gap:4px;color:var(--ok);font-weight:700;white-space:nowrap}.ack-note svg,.done-by svg{width:13px;height:13px}
     #chatList{max-height:46vh;overflow-y:auto;margin-top:12px}
     /* The chat comes down from the top of the screen and is only as tall as what's left above the keyboard
@@ -1101,7 +1104,7 @@
     onSnapshot, query, where, limit, serverTimestamp, arrayUnion, arrayRemove, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-  const VERSION = "1.02";
+  const VERSION = "1.03";
   // the computer layout (side menu): must match the @media rule in the styles
   const WIDE = window.matchMedia("(min-width: 900px) and (hover: hover) and (pointer: fine)");
   WIDE.addEventListener?.("change", () => state.user && state.household && render());
@@ -3419,8 +3422,11 @@
     const name = m => h.memberNames?.[m] || "Member";
     const doneByOthers = others.filter(m => m !== uid && acked.includes(m));
     const waiting = others.filter(m => !acked.includes(m));
+    // on a row it's just the thumb in a small green bubble, with the initial of each person who acknowledged it
+    // in their colour (the details page names them)
+    const ackedBy = doneByOthers.map(name).join(" & ");
     let note = doneByOthers.length
-      ? `<span class="ack-note">${ICONS.thumb}Acknowledged by ${escapeHtml(doneByOthers.map(name).join(" & "))}</span>`
+      ? `<span class="ack-note bub" role="img" title="Acknowledged by ${escapeHtml(ackedBy)}" aria-label="Acknowledged by ${escapeHtml(ackedBy)}">${ICONS.thumb}${doneByOthers.map(m => `<i class="ack-ini" style="background:${colorOf(m)}">${escapeHtml((name(m).trim().charAt(0) || "?").toUpperCase())}</i>`).join("")}</span>`
       : "";
     // something the other person changed or messaged about, waiting for you: say what
     if (item.lastChange && actor !== uid && !acked.includes(uid)) {
@@ -3435,7 +3441,7 @@
       const text = `Waiting for ${waiting.map(name).join(" & ")} to acknowledge`;
       control = `<span class="ack-status" title="${escapeHtml(text)}">${ICONS.thumb}<span class="sr">${escapeHtml(text)}</span></span>`;
     }
-    return { control, note };
+    return { control, note, ackedBy };
   }
 
   function openChat(id) {
@@ -4622,7 +4628,7 @@
   // "Acknowledged": who has (green, by name), who it's waiting on, or your own button / tick
   function ackRow(ack) {
     if (!ack.control && !ack.note) return "";
-    const note = ack.note.replace("Acknowledged by ", "");
+    const note = ack.ackedBy ? `<span class="ack-note">${ICONS.thumb}${escapeHtml(ack.ackedBy)}</span>` : "";
     const waiting = /ack-status"(?![^>]*\bok\b)[^>]*title="([^"]+)"/.exec(ack.control);
     const control = waiting ? `<span class="small">${waiting[1]}</span>` : ack.control;
     return `<div class="v-row"><span>Acknowledged</span><span class="v-ack">${note}${control}</span></div>`;
