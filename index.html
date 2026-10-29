@@ -629,6 +629,12 @@
     #itemSheet .form-hint{margin-top:0}
     #itemSheet .form-error{margin:0 4px}
     .repeats{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}.repeats svg{width:12px;height:12px}
+    .siri-link{display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 10px 10px 14px;background:var(--fill);border-radius:14px}
+    .siri-link span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-family:ui-monospace,Menlo,monospace;color:var(--muted)}
+    .siri-h{margin:16px 0 6px;font-size:15px;font-weight:800}
+    .siri-steps,.siri-say{margin:0;padding-left:22px;line-height:1.45;font-size:14.5px}.siri-steps li,.siri-say li{margin:4px 0}
+    .siri-say li{color:var(--muted);font-style:italic}
+    .siri-new{display:block;margin:12px auto 0;font-size:13.5px}
     .invite-code{font-size:32px;font-weight:800;letter-spacing:3px;text-align:center;padding:18px;background:var(--fill);border-radius:16px;margin-top:14px;font-variant-numeric:tabular-nums;user-select:all;-webkit-user-select:all}
 
     /* sign-in and welcome */
@@ -1055,6 +1061,31 @@
     <button id="confirmAlt" class="delete-btn hidden" data-action="confirm-alt"></button>
   </div>
 
+  <div id="siriSheet" class="modal hidden" role="dialog" aria-labelledby="siriTitle">
+    <h2 id="siriTitle">Siri</h2>
+    <p>Talk to TidyNest through Siri, using a Shortcut on this phone. Your Siri link is private: it lets the Shortcut add things as you, so don't share it.</p>
+    <div class="siri-link"><span id="siriLink"></span><button class="pill" data-action="siri-copy">Copy link</button></div>
+    <h3 class="siri-h">Make the Shortcut (once)</h3>
+    <ol class="siri-steps">
+      <li>Tap <b>Copy link</b> above, then open the <b>Shortcuts</b> app and tap <b>+</b>. Name the shortcut <b>TidyNest</b> (it's what you'll say to Siri).</li>
+      <li>Add the action <b>Dictate Text</b>.</li>
+      <li>Add <b>Get Contents of URL</b>. Tap <b>URL</b> and paste your link. Tap the arrow to show more, set <b>Method</b> to <b>POST</b> and <b>Request Body</b> to <b>JSON</b>, then <b>Add new field → Text</b>: key <b>text</b>, and for the value pick <b>Dictated Text</b>.</li>
+      <li>Add <b>Speak Text</b> (it fills in <b>Contents of URL</b> by itself). Tap <b>Done</b>.</li>
+    </ol>
+    <h3 class="siri-h">Then say "Hey Siri, TidyNest", and…</h3>
+    <ul class="siri-say">
+      <li>"Add milk and bread to the shopping list"</li>
+      <li>"Remind me to put the bins out tonight at 6"</li>
+      <li>"Remind us to pay the rates on the 15th"</li>
+      <li>"Add event dentist on Friday at 3"</li>
+      <li>"Countdown to Christmas on the 25th of December"</li>
+      <li>"What's on today?" or "What's on tomorrow?"</li>
+    </ul>
+    <p class="small">Quicker ones: duplicate the Shortcut and rename it. For <b>What's on today</b>, swap Dictate Text for a <b>Text</b> action saying "what's on today". For <b>Add to shopping list</b>, keep Dictate Text and add a second JSON field: key <b>list</b>, value <b>Shopping</b>.</p>
+    <div class="form-actions"><button class="cancel" data-action="siri-off">Turn off</button><button class="save" data-action="close-sheet">Done</button></div>
+    <button class="delete-btn siri-new" data-action="siri-new">Make a new link (the old one stops working)</button>
+  </div>
+
   <div id="inviteSheet" class="modal hidden" role="dialog" aria-labelledby="inviteTitle">
     <h2 id="inviteTitle">Invite code</h2>
     <p>Whoever you're inviting opens TidyNest, creates their own account, then enters this code on the welcome screen. It works once and expires in 7 days.</p>
@@ -1104,7 +1135,7 @@
     onSnapshot, query, where, limit, serverTimestamp, arrayUnion, arrayRemove, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-  const VERSION = "1.05";
+  const VERSION = "1.06";
   // the computer layout (side menu): must match the @media rule in the styles
   const WIDE = window.matchMedia("(min-width: 900px) and (hover: hover) and (pointer: fine)");
   WIDE.addEventListener?.("change", () => state.user && state.household && render());
@@ -4304,6 +4335,7 @@
       <div class="settings-row"><span>Stats<br><span class="small" style="font-weight:500">How you're both going</span></span><span class="val"><button data-action="view" data-view="stats">See stats</button></span></div>
       ${holidaySettingsHtml()}
       ${state.view === "settings" ? dataUsageHtml() : ""}
+      <div class="settings-row"><span>Siri<br><span class="small" style="font-weight:500">Add things and hear what's on by voice</span></span><span class="val">${siriKey() ? `<span class="small">On for this ${isIOS() ? "phone" : "device"}</span><button data-action="siri-show">Show</button>` : `<span class="small">Off</span><button data-action="siri-setup">Set up</button>`}</span></div>
       <div class="settings-row"><span>Sync</span><span class="val"><span id="syncStatus" class="status"></span></span></div>
       <div class="settings-row"><span>Notifications<br><span class="small" style="font-weight:500">Even when TidyNest is closed</span></span><span class="val">${notifHtml}</span></div>
       ${standalone ? "" : `<div class="settings-row"><span>Install</span><span class="val"><span class="small">Use your browser's Share or menu button, then “Add to Home Screen”.</span></span></div>`}
@@ -4887,6 +4919,56 @@
     if (swRegistration) swRegistration.showNotification(heading, options).catch(fallback);
     else fallback();
   }
+  /* ---------- Siri ----------
+     Each phone gets a private Siri link: the address of the "siri" notification function with a random key on the
+     end. The person's "TidyNest" Shortcut sends what they said to it and speaks the answer (functions/siri.js works
+     out what they meant). Only a fingerprint of the key is saved (siriKeys/{sha-256}, with who and which household);
+     the key itself stays on this phone, so another phone makes its own link. */
+  const SIRI_URL = "https://australia-southeast1-home-sort-76dab.cloudfunctions.net/siri";
+  const siriStore = () => "tidynest-siri-" + (state.user?.uid || "");
+  function siriKey() { try { return localStorage.getItem(siriStore()) || ""; } catch (e) { return ""; } }
+  const siriLink = key => `${SIRI_URL}?k=${key}`;
+  async function sha256(text) {
+    const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+  async function newSiriKey() {
+    const bytes = crypto.getRandomValues(new Uint8Array(24));
+    const key = btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    await setDoc(doc(db, "siriKeys", await sha256(key)), { uid: state.user.uid, hid: state.household.id, device: deviceName(), createdAt: serverTimestamp() });
+    try { localStorage.setItem(siriStore(), key); } catch (e) {}
+    return key;
+  }
+  // this phone's own link stops working (any other phone keeps its own)
+  async function dropSiriKey() {
+    const key = siriKey();
+    try { localStorage.removeItem(siriStore()); } catch (e) {}
+    if (key) await deleteDoc(doc(db, "siriKeys", await sha256(key))).catch(e => console.warn(e));
+  }
+  function showSiri() {
+    $("siriLink").textContent = siriLink(siriKey());
+    openSheet("siriSheet");
+    $("siriSheet").scrollTop = 0;
+  }
+  async function setUpSiri() {
+    try { await newSiriKey(); showSiri(); render(); }
+    catch (e) { console.warn(e); toast("Couldn't set up Siri. Check you're online and try again."); }
+  }
+  async function copySiriLink() {
+    try { await navigator.clipboard.writeText(siriLink(siriKey())); toast("Siri link copied"); }
+    catch (e) { toast("Couldn't copy. Press and hold the link to copy it instead."); }
+  }
+  async function renewSiri() {
+    await dropSiriKey();
+    await setUpSiri();
+    toast("New link made. Paste it into your Shortcut.");
+  }
+  async function turnSiriOff() {
+    await dropSiriKey();
+    closeSheets(); render();
+    toast("Siri is off for this " + (isIOS() ? "phone" : "device"));
+  }
+
   /* ---------- push notifications ----------
      With this on, the phone gets a notification even when TidyNest is closed: when the other person adds, changes
      or writes about something shared, and when a reminder, event or countdown is due for you. They're sent by the
@@ -5022,6 +5104,11 @@
     "retry-household": () => { showScreen("loading"); findHousehold(); },
     "sign-out": async () => { if (pushOn()) await turnPushOff(true); signOut(auth); },
     "push-on": () => turnPushOn(),
+    "siri-setup": () => setUpSiri(),
+    "siri-show": () => showSiri(),
+    "siri-copy": () => copySiriLink(),
+    "siri-new": () => renewSiri(),
+    "siri-off": () => turnSiriOff(),
     "push-off": () => turnPushOff(),
     "view": el => showView(el.dataset.view),
     "add-here": () => {

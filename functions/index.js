@@ -12,11 +12,13 @@
 const { setGlobalOptions, logger } = require("firebase-functions");
 const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onRequest } = require("firebase-functions/v2/https");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const webpush = require("web-push");
 const crypto = require("crypto");
 const { changeNotices, dueNotices, alertAt, DUE_WINDOW_MS } = require("./logic");
+const siri = require("./siri");
 
 // The functions have to run where the database is; the deploy works that out and puts it in .env.
 setGlobalOptions({ region: process.env.TIDYNEST_REGION || "us-central1", maxInstances: 2, memory: "256MiB" });
@@ -115,5 +117,79 @@ exports.sendDue = onSchedule({ schedule: "every 1 minutes", timeZone: "Australia
       old.docs.forEach(d => batch.delete(d.ref));
       await batch.commit();
     }
+  }
+});
+
+// Siri. Each person's "TidyNest" Shortcut sends what they said here, with their private Siri link (?k=…), and
+// speaks whatever comes back. The link's key is made in the app's Settings; only a fingerprint of it is kept
+// (siriKeys/{sha-256 of the key}: who it belongs to and their household), so the key itself is never stored.
+// Anything added here is just like adding it in the app: it shows on both phones and sends the other person a
+// notification (through sendNews).
+exports.siri = onRequest({ cors: false, timeoutSeconds: 20, invoker: "public" }, async (req, res) => {
+  const reply = text => res.status(200).set("Content-Type", "text/plain; charset=utf-8").send(text);
+  try {
+    let body = req.body;
+    if (typeof body === "string") { try { body = JSON.parse(body); } catch (e) { body = { text: body }; } }
+    body = body && typeof body === "object" ? body : {};
+    const key = String(req.query.k || body.key || "");
+    const text = String(body.text ?? req.query.text ?? "").slice(0, 500);
+    if (!/^[A-Za-z0-9_-]{20,100}$/.test(key)) return reply("This Siri link isn't right. Copy it again from TidyNest's Settings, under Siri.");
+    const hash = crypto.createHash("sha256").update(key).digest("hex");
+    const found = await db.doc("siriKeys/" + hash).get();
+    if (!found.exists) return reply("This Siri link isn't working any more. Make a new one in TidyNest's Settings, under Siri.");
+    const { uid, hid } = found.data();
+    const house = await db.doc("households/" + hid).get();
+    if (!house.exists || !(house.data().members || []).includes(uid)) return reply("You're not in that household any more, so I can't add anything.");
+    const household = house.data();
+    const now = Date.now();
+    const myName = (household.memberNames || {})[uid] || "Someone";
+    const items = db.collection(`households/${hid}/items`);
+    const plan = siri.understand(text, { uid, household, now, listName: String(body.list || req.query.list || "") });
+
+    if (plan.kind === "say") return reply(plan.text);
+
+    if (plan.kind === "agenda") {
+      const got = await items.where("date", ">=", new Date(siri.startOfDay(now) - 60 * 86400000).toISOString()).where("date", "<", new Date(plan.to).toISOString()).get();
+      return reply(siri.agendaText(plan, got.docs.map(d => d.data()), uid, now));
+    }
+
+    if (plan.kind === "list") {
+      if (!plan.entries.length) return reply(`What should I add to ${plan.list.name}?`);
+      const there = (await items.where("category", "==", plan.list.id).get()).docs.filter(d => d.data().listItem);
+      const added = [], already = [];
+      const batch = db.batch();
+      let order = Date.now();
+      for (const title of plan.entries) {
+        const same = there.filter(d => String(d.data().title || "").trim().toLowerCase() === title.toLowerCase());
+        const live = same.find(d => !d.data().done && !d.data().cleared);
+        if (live) { already.push(title); continue; }
+        const back = same.find(d => d.data().cleared) || same.find(d => d.data().done);
+        if (back) batch.update(back.ref, { done: false, cleared: false, doneBy: null, doneAt: null, listOrder: order++, updatedAt: FieldValue.serverTimestamp() });
+        else batch.set(items.doc(), {
+          title, type: "reminder", listItem: true, category: plan.list.id, date: "", notes: "", location: "", allDay: false, offCalendar: true,
+          shared: plan.list.shared !== false, assignedTo: [uid], done: false, cleared: false, listOrder: order++,
+          createdBy: uid, createdByName: myName, createdByEmail: "", createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(), comments: [], ackBy: []
+        });
+        added.push(title);
+      }
+      if (added.length) await batch.commit();
+      const join = a => a.length < 2 ? a[0] : `${a.slice(0, -1).join(", ")} and ${a[a.length - 1]}`;
+      return reply([added.length ? `Added ${join(added)} to ${plan.list.name}.` : "", already.length ? `${join(already)} ${already.length === 1 ? "is" : "are"} already on ${plan.list.name}.` : ""].filter(Boolean).join(" "));
+    }
+
+    if (plan.kind === "item") {
+      const members = household.members || [uid];
+      const item = { ...plan.item, assignedTo: plan.item.assignedTo.filter(m => members.includes(m)) };
+      if (!item.assignedTo.length) item.assignedTo = [uid];
+      await items.doc().set({
+        ...item, done: false, createdBy: uid, createdByName: myName, createdByEmail: "",
+        createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(), comments: []
+      });
+      return reply(plan.say);
+    }
+    return reply("Sorry, something went wrong.");
+  } catch (e) {
+    logger.error("siri failed", e);
+    return reply("Sorry, TidyNest couldn't do that just now. Try again in a moment.");
   }
 });

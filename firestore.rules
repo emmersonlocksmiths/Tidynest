@@ -105,6 +105,17 @@ service cloud.firestore {
       }
     }
 
+    // Siri links: a fingerprint of each phone's private key, with whose it is and their household.
+    // You can make one for yourself (in your own household) and remove your own; the Siri function does the rest.
+    match /siriKeys/{hash} {
+      allow get: if signedIn() && resource.data.uid == request.auth.uid;
+      allow create: if signedIn()
+        && hash.size() == 64
+        && request.resource.data.uid == request.auth.uid
+        && isMember(request.resource.data.hid);
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
     // The public key phones need to sign up for notifications.
     match /config/push {
       allow get: if signedIn();
