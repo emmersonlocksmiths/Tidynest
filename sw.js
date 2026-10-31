@@ -1,8 +1,10 @@
 // TidyNest service worker: lets the app open offline, and shows notifications (including pushed ones that arrive
 // while TidyNest is closed).
-// Pages are always fetched fresh when online, so uploading a new version takes effect straight away.
+// TidyNest's own files open straight from the copy saved on the phone (so it opens fast, even on a slow
+// connection), and the newest copy is fetched in the background for next time. When a new version has arrived,
+// the app is told, and it says to reopen.
 
-const CACHE = "tidynest-v7";
+const CACHE = "tidynest-v8";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "logo-mark.png", "logo-mark-dark.png", "onest.woff2"];
 const FIREBASE_SDK = "https://www.gstatic.com/firebasejs/";
 
@@ -41,20 +43,30 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // TidyNest's own files: newest from the network, falling back to the saved copy when offline.
+  // TidyNest's own files: the saved copy straight away, while the newest is fetched for next time.
+  // (With nothing saved yet, it waits for the network.)
   if (url.origin === self.location.origin) {
+    const key = request.mode === "navigate" ? new URL("./", self.registration.scope).href : request.url.split("?")[0];
+    const fresh = fetch(request.url, { cache: "no-cache" }).then(async response => {
+      if (response.ok) {
+        const cache = await caches.open(CACHE);
+        const old = await cache.match(key);
+        const copy = response.clone();
+        await cache.put(key, response.clone());
+        // a new version of the page itself: let the open app know
+        if (old && request.mode === "navigate") {
+          const [a, b] = await Promise.all([old.text(), copy.text()]);
+          if (a !== b) (await self.clients.matchAll({ type: "window" })).forEach(c => c.postMessage({ type: "updated" }));
+        }
+      }
+      return response;
+    });
     event.respondWith(
-      fetch(request.url, { cache: "no-cache" })
-        .then(response => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE).then(cache => cache.put(request.url, copy));
-          }
-          return response;
+      caches.match(key).then(hit => hit || (request.mode === "navigate" ? caches.match("index.html") : undefined))
+        .then(hit => {
+          if (hit) { event.waitUntil(fresh.catch(() => {})); return hit; }
+          return fresh.catch(() => Response.error());
         })
-        .catch(() => caches.match(request.url, { ignoreSearch: true })
-          .then(hit => hit || (request.mode === "navigate" ? caches.match("index.html") : undefined))
-          .then(hit => hit || Response.error()))
     );
   }
   // Everything else (Firebase sign-in and database traffic) goes straight to the network.

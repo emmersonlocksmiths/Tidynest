@@ -1135,7 +1135,7 @@
     onSnapshot, query, where, limit, serverTimestamp, arrayUnion, arrayRemove, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-  const VERSION = "1.06";
+  const VERSION = "1.07";
   // the computer layout (side menu): must match the @media rule in the styles
   const WIDE = window.matchMedia("(min-width: 900px) and (hover: hover) and (pointer: fine)");
   WIDE.addEventListener?.("change", () => state.user && state.household && render());
@@ -1590,8 +1590,32 @@
     el.style.display = message ? "block" : "none";
   }
 
+  // Opening fast: the household this phone was last in is remembered (with its name, people and categories), so
+  // TidyNest goes straight in and shows what's saved on the phone, without waiting on the internet. The check that
+  // it's still the right household carries on in the background and only steps in if something's changed.
+  const houseKey = uid => "tidynest-house-" + uid;
+  function rememberHouse() {
+    const h = state.household, uid = state.user?.uid;
+    if (!h || !uid) return;
+    const { id, name, members, memberNames, memberColors, reminderCategories, holidays } = h;
+    try { localStorage.setItem(houseKey(uid), JSON.stringify({ id, data: { name, members, memberNames, memberColors, reminderCategories, holidays } })); } catch {}
+  }
   async function findHousehold() {
     const uid = state.user.uid;
+    let remembered = null;
+    try { remembered = JSON.parse(localStorage.getItem(houseKey(uid)) || "null"); } catch {}
+    if (remembered?.id && Array.isArray(remembered.data?.members) && remembered.data.members.includes(uid)) {
+      enterHousehold(remembered.id, remembered.data);
+      try {
+        const snap = await getDocs(query(collection(db, "households"), where("members", "array-contains", uid), limit(5)));
+        if (state.user?.uid !== uid || snap.docs.some(d => d.id === remembered.id)) return;   // all good
+        try { localStorage.removeItem(houseKey(uid)); } catch {}
+        stopListening();
+        if (snap.empty) return showSetup();
+        enterHousehold(snap.docs[0].id, snap.docs[0].data());
+      } catch (error) { console.warn("Couldn't check the household (offline?)", error); }
+      return;
+    }
     try {
       const snap = await getDocs(query(
         collection(db, "households"),
@@ -1710,6 +1734,7 @@
         holidays: d.holidays && typeof d.holidays === "object" ? d.holidays : {}
       };
       syncMyName();
+      rememberHouse();
       render();
     }, onSyncError));
 
@@ -5081,6 +5106,7 @@
   }
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.addEventListener("message", event => {
+      if (event.data?.type === "updated") toast("TidyNest has been updated. Close and reopen it to get the new version.");
       if (event.data?.type === "open-item" && event.data.id) { linkedItem = event.data.id; openLinkedItem(); }
     });
   }
