@@ -230,10 +230,13 @@
     .q-row{display:flex;align-items:center;gap:10px;min-height:50px;padding:0 6px 0 13px;border-top:1px solid var(--line);background:var(--card)}
     #listRows > .q-row:first-child{border-top:0}
     .q-tick{flex:1;min-width:0;display:flex;align-items:center;gap:12px;border:0;background:none;padding:12px 0;text-align:left;font-size:16px;font-weight:600;color:var(--text)}
-    .q-name{min-width:0;overflow-wrap:anywhere;background:linear-gradient(currentColor,currentColor) no-repeat 0 58%/0 2px;transition:background-size .24s ease-out}
+    /* the crossing-off line is drawn on the words themselves, one line for each line of text (box-decoration-break),
+       so an item that wraps onto two lines is crossed through both */
+    .q-name{min-width:0;overflow-wrap:anywhere}
+    .q-text{background:linear-gradient(currentColor,currentColor) no-repeat 0 58%/0 2px;-webkit-box-decoration-break:clone;box-decoration-break:clone;transition:background-size .24s ease-out}
     .q-box{flex:0 0 auto;width:24px;height:24px;border-radius:7px;border:2px solid var(--line-strong);display:grid;place-items:center;transition:background-color .18s ease,border-color .18s ease}
     .q-row.got .q-tick{color:var(--muted)}
-    .q-row.got .q-name{background-size:100% 2px}
+    .q-row.got .q-text{background-size:100% 2px}
     .q-row.got .q-box{background:var(--ok);border-color:var(--ok)}
     .q-row.got .q-box::after{content:"";width:10px;height:5px;border-left:2.5px solid #fff;border-bottom:2.5px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
     .q-who{flex:0 0 auto;font-size:12px;font-weight:700;color:var(--muted)}
@@ -251,7 +254,7 @@
     .again button:active{transform:scale(.93)}
     .q-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:12px 4px 0;font-size:13px;color:var(--muted)}
     .q-foot .link{border:0;background:none;padding:4px 0;color:var(--link);font-weight:700;font-size:14px}
-    @media (prefers-reduced-motion: reduce){.q-box,.q-name,.again button{transition:none}}
+    @media (prefers-reduced-motion: reduce){.q-box,.q-text,.again button{transition:none}}
     /* the editor: each row's picture can be tapped to choose another picture, a colour, or move it up or down */
     .cat-ic{flex:0 0 auto;width:42px;height:42px;border:0;border-radius:12px;display:grid;place-items:center;color:#fff;background:var(--tc,#5c7c99);padding:0}
     .cat-ic svg{width:22px;height:22px}
@@ -1135,7 +1138,7 @@
     onSnapshot, query, where, limit, serverTimestamp, arrayUnion, arrayRemove, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-  const VERSION = "1.08";
+  const VERSION = "1.09";
   // the computer layout (side menu): must match the @media rule in the styles
   const WIDE = window.matchMedia("(min-width: 900px) and (hover: hover) and (pointer: fine)");
   WIDE.addEventListener?.("change", () => state.user && state.household && render());
@@ -2314,7 +2317,7 @@
     const id = escapeHtml(i.id), title = escapeHtml(i.title);
     const who = i.done && i.doneBy ? (i.doneBy === state.user.uid ? "You" : escapeHtml(nameOf(i.doneBy))) : "";
     return `<div class="q-row ${i.done ? "got" : ""}" data-entry="${id}">
-      <button type="button" class="q-tick" data-action="entry-tick" data-id="${id}" aria-pressed="${!!i.done}"><span class="q-box"></span><span class="q-name">${title}</span></button>
+      <button type="button" class="q-tick" data-action="entry-tick" data-id="${id}" aria-pressed="${!!i.done}"><span class="q-box"></span><span class="q-name"><span class="q-text">${title}</span></span></button>
       ${who ? `<span class="q-who">${who}</span>` : ""}${i.done ? `<button type="button" class="q-x" data-action="entry-remove" data-id="${id}" aria-label="Remove ${title} for good">×</button>` : ""}
     </div>`;
   }
