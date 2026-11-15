@@ -1138,7 +1138,7 @@
     onSnapshot, query, where, limit, serverTimestamp, arrayUnion, arrayRemove, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-  const VERSION = "1.09";
+  const VERSION = "1.10";
   // the computer layout (side menu): must match the @media rule in the styles
   const WIDE = window.matchMedia("(min-width: 900px) and (hover: hover) and (pointer: fine)");
   WIDE.addEventListener?.("change", () => state.user && state.household && render());
@@ -2447,7 +2447,8 @@
 
   /* ---------- memory: suggestions from things added before ---------- */
 
-  // Every title this person has seen is remembered on this device (with its type, location and who it was for),
+  // Every title this person has seen is remembered on this device (with its type, location and who it was for, and
+  // for an event its time of day, how long it ran and its alert),
   // so it can be offered again while typing a new one, even after the original has been ticked off and tidied away.
   const MEMO_MAX = 400;
   let memo = null, memoOwner = "";
@@ -2475,6 +2476,16 @@
       const had = bank[key];
       if (had && had.last > when) continue;   // keep the details of the most recent one with this title
       bank[key] = { title, type: item.type, mode: item.type === "timer" ? timerMode(item) : "", location: item.type === "timer" ? "" : String(item.location || ""), who: ownersOf(item), category: categoryOf(item), last: when };
+      if (item.type === "calendar") {
+        const start = itemTime(item), end = itemEnd(item);
+        if (Number.isFinite(start)) {
+          const d = new Date(start);
+          bank[key].allDay = !!item.allDay;
+          bank[key].time = item.allDay ? "" : `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+          bank[key].mins = Number.isFinite(end) && end > start ? Math.min(Math.round((end - start) / 60000), 60 * 24 * 30) : 0;
+          if (item.alert !== undefined) bank[key].alert = item.alert;
+        }
+      }
       // one that was removed from the suggestions stays removed until it's added again
       if (had?.hidden && had.hidden >= when) bank[key].hidden = had.hidden;
     }
@@ -2510,8 +2521,9 @@
     }).join("");
     $("memoList").classList.remove("hidden");
   }
-  // Picking a suggestion fills in the title and brings its type, location and who it was for.
-  // Anything already chosen on this sheet is left alone, and the date and time are never touched.
+  // Picking a suggestion fills in the title and brings its type, location and who it was for. An event also brings
+  // its time of day, how long it ran and its alert, on the day already picked (unless a time has been chosen here).
+  // Anything already chosen on this sheet is left alone, and the date is never touched.
   function pickMemo(key) {
     const entry = loadMemo()[key];
     if (!entry) return;
@@ -2525,6 +2537,25 @@
       form.mode = entry.mode === "up" ? "upnow" : "down";
     }
     if (form.type !== "timer" && entry.location && !$("itemPlace").value.trim()) $("itemPlace").value = entry.location;
+    if (form.type === "calendar" && entry.type === "calendar" && !form.editing && !form.timeTouched && (entry.time || entry.allDay)) {
+      const day = $("itemDate").value;
+      if (day) {
+        $("itemAllDay").checked = !!entry.allDay;
+        if (entry.allDay) {
+          const days = Math.max(1, Math.round((entry.mins + 1) / 1440));
+          const last = new Date(`${day}T00:00`); last.setDate(last.getDate() + days - 1);
+          $("itemEndDate").value = dayKey(last);
+          showTime("itemTime", "00:00"); showTime("itemEndTime", "23:59");
+        } else {
+          showTime("itemTime", entry.time);
+          const start = readWhen("itemDate", "itemTime");
+          if (start) setWhen("itemEndDate", "itemEndTime", new Date(start.getTime() + (entry.mins || 60) * 60000));
+        }
+        form.endSet = true;
+        form.lastStart = readWhen("itemDate", "itemTime")?.getTime() ?? form.lastStart;
+        if (!form.alertPicked && entry.alert !== undefined) { form.alert = entry.alert === false ? "none" : String(entry.alert); form.alertPicked = true; }
+      }
+    }
     if (!form.catTouched && entry.category && categoryName(entry.category)) form.category = entry.category;
     if (!form.whoTouched && Array.isArray(entry.who)) {
       const who = (state.household.members || []).filter(m => entry.who.includes(m));
@@ -2657,6 +2688,7 @@
     // A new reminder starts with both off, to be switched on if it needs them (unless it was opened on a calendar day).
     form.dateGiven = !!defaults.date;
     form.dateTouched = false;
+    form.timeTouched = false;
     form.hasDate = item ? item.type !== "reminder" || Number.isFinite(itemTime(item)) : form.dateGiven;
     form.hasTime = item ? !item.allDay : false;
     form.hasEnd = form.endSet;
@@ -5206,7 +5238,7 @@
     "pick-share": el => { form.shared = el.dataset.share === "shared"; updateForm(); },
     "flip-ampm": el => {
       el.textContent = el.textContent === "pm" ? "am" : "pm";
-      if (el.dataset.for === "itemTime") return startChanged();
+      if (el.dataset.for === "itemTime") { form.timeTouched = true; return startChanged(); }
       form.endSet = true;
       updateForm();
     },
@@ -5337,6 +5369,7 @@
 
   document.addEventListener("change", event => {
     const id = event.target.id;
+    if (id === "itemTimeH" || id === "itemTimeM") form.timeTouched = true;
     if (id === "itemDate" || id === "itemTimeH" || id === "itemTimeM") startChanged();
     else if (id === "itemAllDay") allDayChanged();
     else if (id === "remOnCal") { form.onCalendar = $("remOnCal").checked; }
