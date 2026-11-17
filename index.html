@@ -1138,7 +1138,7 @@
     onSnapshot, query, where, limit, serverTimestamp, arrayUnion, arrayRemove, Timestamp, writeBatch
   } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-  const VERSION = "1.10";
+  const VERSION = "1.11";
   // the computer layout (side menu): must match the @media rule in the styles
   const WIDE = window.matchMedia("(min-width: 900px) and (hover: hover) and (pointer: fine)");
   WIDE.addEventListener?.("change", () => state.user && state.household && render());
@@ -2372,13 +2372,23 @@
     $("quickAddInput").placeholder = toGet.length ? "Add another…" : `Add to ${c.name}…`;
     renderAgain(c);
   }
-  // Things bought before, in alphabetical order, as one-tap buttons. Typing narrows them down.
+  // Things bought before, as one-tap buttons: the ones got most often on this list (by how many times each has been
+  // ticked off), shown in alphabetical order. Typing narrows them down to the most-got ones that match.
+  const AGAIN_MOST = 12, AGAIN_TYPED = 8;
   function renderAgain(c) {
     const typed = $("quickAddInput").value.trim().toLowerCase();
-    const onList = new Set(listEntries(c.id).filter(i => !i.cleared).map(entryKey));
+    const entries = listEntries(c.id);
+    const onList = new Set(entries.filter(i => !i.cleared).map(entryKey));
+    const times = new Map();
+    for (const i of entries) {
+      const k = entryKey(i);
+      times.set(k, (times.get(k) || 0) + (Array.isArray(i.gotAt) ? i.gotAt.length : 0));
+    }
     const seen = new Set();
-    const ideas = listEntries(c.id).filter(i => i.cleared).sort((a, b) => dateValue(b.clearedAt) - dateValue(a.clearedAt))
+    const ideas = entries.filter(i => i.cleared).sort((a, b) => dateValue(b.clearedAt) - dateValue(a.clearedAt))
       .filter(i => { const k = entryKey(i); if (onList.has(k) || seen.has(k) || (typed && !k.includes(typed))) return false; seen.add(k); return true; })
+      .sort((a, b) => (times.get(entryKey(b)) || 0) - (times.get(entryKey(a)) || 0))   // most often first (then most recent)
+      .slice(0, typed ? AGAIN_TYPED : AGAIN_MOST)
       .sort((a, b) => String(a.title).localeCompare(String(b.title), "en-AU", { sensitivity: "base", numeric: true }));
     const html = ideas.length ? `<b>${typed ? "Bought before" : "Again?"}</b>` + ideas.map(i => `<button type="button" data-action="again-add" data-id="${escapeHtml(i.id)}">+ ${escapeHtml(i.title)}</button>`).join("") : "";
     if ($("againBox").innerHTML !== html) $("againBox").innerHTML = html;
